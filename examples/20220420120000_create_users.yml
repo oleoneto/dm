@@ -1,0 +1,14 @@
+version: 1
+name: CreateUsers
+adapter: postgresql
+changes:
+  up: |
+    "
+    CREATE TABLE users (
+      id SERIAL,
+      name varchar unique not null,
+      username varchar unique not null
+    );
+    "
+  down: |
+    "DROP TABLE users;"
