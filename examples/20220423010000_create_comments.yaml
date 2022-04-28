@@ -1,0 +1,13 @@
+schema: 1
+name: CreateComments
+adapter: postgresql
+changes:
+  up: |
+    CREATE TABLE comments (
+      id SERIAL,
+      content TEXT NOT NULL,
+      user_id INT FOREIGN KEY REFERENCES users(id),
+      article_id INT FOREIGN KEY REFERENCES articles(id)
+    );
+  down: |
+    DROP TABLE comments;

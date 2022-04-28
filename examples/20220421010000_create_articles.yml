@@ -1,0 +1,18 @@
+schema: 1
+name: CreateArticles
+adapter: postgresql
+changes:
+  up: |
+    CREATE TABLE articles (
+      id SERIAL,
+      title VARCHAR NOT NULL,
+      content TEXT NOT NULL,
+      user_id INT,
+
+      CONSTRAINT fk_user
+        FOREIGN KEY(user_id) 
+        REFERENCES users(id)
+        ON DELETE CASCADE
+    );
+  down: |
+    DROP TABLE articles;

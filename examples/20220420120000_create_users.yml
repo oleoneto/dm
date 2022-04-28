@@ -1,14 +1,13 @@
-version: 1
+schema: 1
 name: CreateUsers
 adapter: postgresql
 changes:
   up: |
-    "
     CREATE TABLE users (
       id SERIAL,
-      name varchar unique not null,
-      username varchar unique not null
+      name varchar not null,
+      username varchar unique not null,
+      PRIMARY KEY (id)
     );
-    "
   down: |
-    "DROP TABLE users;"
+    DROP TABLE users;
