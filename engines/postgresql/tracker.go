@@ -1,13 +1,24 @@
 package postgresql
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"strings"
 
 	"github.com/cleopatrio/db-migrator-lib/migrations"
+	"github.com/georgysavva/scany/pgxscan"
 )
 
-const engineName string = "PostgreSQL"
+func (engine Postgres) IsTracked() bool {
+	_, tracked := engine.Version()
+	return tracked
+}
+
+func (engine Postgres) IsEmpty() bool {
+	version, tracked := engine.Version()
+	return tracked && (version == "")
+}
 
 func (engine Postgres) IsUpToDate(changes migrations.Migrations) bool {
 	if !engine.IsTracked() {
@@ -19,20 +30,17 @@ func (engine Postgres) IsUpToDate(changes migrations.Migrations) bool {
 	return tracked && (version == recent.Version)
 }
 
-func (engine Postgres) IsTracked() bool {
-	_, tracked := engine.Version()
-	return tracked
-}
-
 func (engine Postgres) Version() (string, bool) {
-	version := MigratorVersion{}
+	version := migrations.MigratorVersion{}
 
-	acquireDatabaseConnection()
+	engine.acquireDatabaseConnection()
 
-	err := QueryAndScanOneInterface(
-		"SELECT * FROM _migrations ORDER BY version DESC LIMIT 1;",
-		&version,
+	rows, _ := Pg().Query(
+		context.Background(),
+		fmt.Sprintf("SELECT * FROM %v ORDER BY version DESC LIMIT 1;", engine.Table),
 	)
+
+	err := pgxscan.ScanOne(&version, rows)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
@@ -54,13 +62,16 @@ func (engine Postgres) StartTracking() error {
 		return nil
 	}
 
-	return QueryAndScan(
-		`CREATE TABLE _migrations (
+	rows, _ := Pg().Query(
+		context.Background(),
+		fmt.Sprintf(`CREATE TABLE %v (
 			id SERIAL,
 			version varchar UNIQUE NOT NULL,
 			name varchar
-		);`,
+		);`, engine.Table),
 	)
+
+	return rows.Scan()
 }
 
 func (engine Postgres) StopTracking() error {
@@ -68,10 +79,10 @@ func (engine Postgres) StopTracking() error {
 		return nil
 	}
 
-	return QueryAndScan("DROP TABLE _migrations;")
-}
+	rows, _ := Pg().Query(
+		context.Background(),
+		fmt.Sprintf("DROP TABLE %v;", engine.Table),
+	)
 
-func (engine Postgres) IsEmpty() bool {
-	version, tracked := engine.Version()
-	return tracked && (version == "")
+	return rows.Scan()
 }

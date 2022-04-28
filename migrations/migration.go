@@ -20,6 +20,12 @@ type Migration struct {
 	} `yaml:"changes"`
 }
 
+type MigratorVersion struct {
+	Id      int    `json:"id"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
 // MARK: - Implements Sortable Interface
 
 type Migrations []Migration

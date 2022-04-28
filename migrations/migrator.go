@@ -61,6 +61,6 @@ func (instance *Migrator) Run(changes []Migration, mode int) error {
 }
 
 func (instance *Migrator) Status() {
-	status, _ := instance.Engine.Version()
-	fmt.Println(status)
+	version, _ := instance.Engine.Version()
+	fmt.Printf("Current version: %v\n", version)
 }

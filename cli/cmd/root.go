@@ -28,7 +28,8 @@ func Execute() error {
 }
 
 func initConfig() {
-	migrator.Engine = postgresql.Postgres{} // TODO: Receive from Migration.`Adapter`
+	// TODO: Receive from Migration.`Adapter`
+	migrator.Engine = postgresql.Postgres{Table: table, Database: databaseUrl}
 	migrator.Directory = directory
 	migrator.DatabaseUrl = databaseUrl
 	migrator.Table = table
