@@ -1,6 +1,24 @@
 package migrations
 
 type Engine interface {
+	MigrationRunner
+	Tracker
+	Validator
+}
+
+type MigrationRunner interface {
+	/**
+	* @brief Runs migrations
+	 */
+	Up(changes Migrations) error
+
+	/**
+	 * @brief Reverts migrations
+	 */
+	Down(changes Migrations) error
+}
+
+type Tracker interface {
 	/**
 	 * @brief Prepares database for migration tracking
 	 */
@@ -10,16 +28,6 @@ type Engine interface {
 	 * @brief Stops tracking database migrations
 	 */
 	StopTracking() error
-
-	/**
-	 * @brief Runs migrations
-	 */
-	Up(changes Migrations) error
-
-	/**
-	 * @brief Reverts migrations
-	 */
-	Down(changes Migrations) error
 
 	/**
 	 * @brief Return the version of the last applied migration. The returned boolean should indicate if the database is being tracked
@@ -40,4 +48,11 @@ type Engine interface {
 	 * @brief Indicator of whether the database has any migrations
 	 */
 	IsEmpty() bool
+}
+
+type Validator interface {
+	/**
+	 * @brief Given a set of migrations, this method should return whether or not the migrations are valid.
+	 */
+	Validate(changes Migrations) bool
 }
