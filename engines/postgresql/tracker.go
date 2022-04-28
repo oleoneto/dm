@@ -67,7 +67,9 @@ func (engine Postgres) StartTracking() error {
 		fmt.Sprintf(`CREATE TABLE %v (
 			id SERIAL,
 			version varchar UNIQUE NOT NULL,
-			name varchar
+			name varchar UNIQUE NOT NULL,
+
+			PRIMARY KEY(id)
 		);`, engine.Table),
 	)
 
@@ -85,4 +87,31 @@ func (engine Postgres) StopTracking() error {
 	)
 
 	return rows.Scan()
+}
+
+func (engine Postgres) AppliedMigrations() map[string]migrations.Migration {
+	var applied migrations.Migrations
+	mapping := map[string]migrations.Migration{}
+
+	engine.acquireDatabaseConnection()
+
+	rows, _ := Pg().Query(
+		context.Background(),
+		fmt.Sprintf("SELECT * FROM %v;", engine.Table),
+	)
+
+	err := pgxscan.ScanAll(&applied, rows)
+
+	if err != nil {
+		fmt.Printf("%v: An error occurred.\nError: %v\n", engineName, err)
+		return mapping
+	}
+
+	// FIX: May need to refactor this logic
+	for _, m := range applied {
+		key := fmt.Sprintf("%v_%v", m.Version, m.Name)
+		mapping[key] = m
+	}
+
+	return mapping
 }

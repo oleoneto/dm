@@ -1,6 +1,6 @@
 schema: 1
 name: CreateComments
-adapter: postgresql
+engine: postgresql
 changes:
   up: |
     CREATE TABLE comments (

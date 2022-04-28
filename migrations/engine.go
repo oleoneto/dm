@@ -48,6 +48,11 @@ type Tracker interface {
 	 * @brief Indicator of whether the database has any migrations
 	 */
 	IsEmpty() bool
+
+	/**
+	 * @brief Returns all applied/saved migrations
+	 */
+	AppliedMigrations() map[string]Migration
 }
 
 type Validator interface {

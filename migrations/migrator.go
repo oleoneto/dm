@@ -6,10 +6,11 @@ import (
 )
 
 type Migrator struct {
-	Engine      Engine
-	Directory   string
-	DatabaseUrl string
-	Table       string
+	Engine           Engine
+	Directory        string
+	DatabaseUrl      string
+	Table            string
+	SupportedEngines map[string]Engine
 }
 
 var (
@@ -18,34 +19,30 @@ var (
 	FILE_PATTERN = *regexp.MustCompile(`(?P<Version>^\d{14})_(?P<Name>[aA-zZ]+).ya?ml$`)
 )
 
-func (instance *Migrator) Build(dir string) []Migration {
-	var changes []Migration
-
-	files, _ := MatchingFiles(dir, &FILE_PATTERN)
-
-	for _, file := range files {
-		var mg Migration
-
-		mg.Load(file, dir)
-
-		changes = append(changes, mg)
-	}
-
-	return changes
+func (instance *Migrator) Build(dir string) Migrations {
+	return BuildMigrations(dir, &FILE_PATTERN)
 }
 
 func (instance *Migrator) ListFiles(dir string) error {
-	files, err := MatchingFiles(dir, &FILE_PATTERN)
+	return ListFiles(dir, &FILE_PATTERN)
+}
 
-	if err != nil {
-		return err
+func (instance *Migrator) PendingMigrations(dir string) map[string]Migration {
+	appliedMigrations := instance.Engine.AppliedMigrations()
+
+	migrationFiles := instance.Build(dir)
+
+	for _, file := range migrationFiles {
+		key := fmt.Sprintf("%v_%v", file.Version, file.Name)
+
+		_, applied := appliedMigrations[key]
+
+		if !applied {
+			fmt.Printf("Name: %v, Version: %v\n", file.Name, file.Version)
+		}
 	}
 
-	for _, file := range files {
-		fmt.Println(file.Name())
-	}
-
-	return nil
+	return appliedMigrations
 }
 
 func (instance *Migrator) Run(changes []Migration, mode int) error {
@@ -63,4 +60,8 @@ func (instance *Migrator) Run(changes []Migration, mode int) error {
 func (instance *Migrator) Status() {
 	version, _ := instance.Engine.Version()
 	fmt.Printf("Current version: %v\n", version)
+}
+
+func (instance *Migrator) Validate(changes Migrations) bool {
+	return instance.Engine.Validate(changes)
 }

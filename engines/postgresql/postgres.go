@@ -8,9 +8,10 @@ import (
 )
 
 type Postgres struct {
-	Name     string `default:"PostgreSQL"`
-	Table    string
-	Database string
+	Name      string
+	Table     string
+	Database  string
+	Directory string
 }
 
 const engineName string = "PostgreSQL"

@@ -10,11 +10,13 @@ import (
 )
 
 type Migration struct {
-	Version string
-	Schema  int    `yaml:"schema"`
-	Name    string `yaml:"name"`
-	Adapter string `yaml:"adapter"`
-	Changes struct {
+	Id       int
+	FileName string
+	Version  string
+	Schema   int    `yaml:"schema"`
+	Name     string `yaml:"name"`
+	Engine   string `yaml:"engine"`
+	Changes  struct {
 		Up   string `yaml:"up"`
 		Down string `yaml:"down"`
 	} `yaml:"changes"`
@@ -53,6 +55,7 @@ func (instance *Migration) Load(file fs.FileInfo, parent string) error {
 
 	match := FILE_PATTERN.FindStringSubmatch(file.Name())
 
+	instance.FileName = file.Name()
 	instance.Version = match[FILE_PATTERN.SubexpIndex("Version")]
 
 	if err != nil {

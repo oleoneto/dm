@@ -10,6 +10,11 @@ import (
 )
 
 func (engine Postgres) Up(changes migrations.Migrations) error {
+
+	if !engine.Validate(changes) {
+		return new(migrations.ValidationError)
+	}
+
 	engine.acquireDatabaseConnection()
 
 	if engine.IsUpToDate(changes) {

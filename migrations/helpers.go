@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -25,6 +26,36 @@ func MatchingFiles(dir string, pattern *regexp.Regexp) ([]fs.FileInfo, error) {
 	}
 
 	return matches, nil
+}
+
+func BuildMigrations(dir string, pattern *regexp.Regexp) Migrations {
+	var changes Migrations
+
+	files, _ := MatchingFiles(dir, pattern)
+
+	for _, file := range files {
+		var mg Migration
+
+		mg.Load(file, dir)
+
+		changes = append(changes, mg)
+	}
+
+	return changes
+}
+
+func ListFiles(dir string, pattern *regexp.Regexp) error {
+	files, err := MatchingFiles(dir, pattern)
+
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		fmt.Println(file.Name())
+	}
+
+	return nil
 }
 
 func CurrentFilepath() string {
