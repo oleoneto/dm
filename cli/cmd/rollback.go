@@ -6,6 +6,8 @@ import (
 )
 
 var (
+	rollbackToVersion string
+
 	rollbackCmd = &cobra.Command{
 		Use:   "rollback",
 		Short: "Rollback migration(s)",
@@ -15,3 +17,11 @@ var (
 		},
 	}
 )
+
+func rollbackConfig() {}
+
+func init() {
+	cobra.OnInitialize(rollbackConfig)
+
+	rollbackCmd.PersistentFlags().StringVar(&rollbackToVersion, "version", "", "rollback to this version")
+}

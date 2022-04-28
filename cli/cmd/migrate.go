@@ -6,6 +6,8 @@ import (
 )
 
 var (
+	migrateToVersion string
+
 	migrateCmd = &cobra.Command{
 		Use:   "migrate",
 		Short: "Run migration(s)",
@@ -15,3 +17,11 @@ var (
 		},
 	}
 )
+
+func migrateConfig() {}
+
+func init() {
+	cobra.OnInitialize(migrateConfig)
+
+	migrateCmd.PersistentFlags().StringVar(&migrateToVersion, "version", "", "run migrations up do this version")
+}
