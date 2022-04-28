@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/cleopatrio/db-migrator-lib/engines/postgresql"
@@ -28,8 +29,25 @@ func Execute() error {
 }
 
 func initConfig() {
+	SUPPORTED_ENGINES := map[string]migrations.Engine{
+		"postgresql": postgresql.Postgres{
+			Name:      "PostgreSQL",
+			Table:     table,
+			Database:  databaseUrl,
+			Directory: directory,
+		},
+	}
+
+	selectedEngine, ok := SUPPORTED_ENGINES[engine]
+
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Unsupported engine '%v'.\n", engine)
+		os.Exit(1)
+	}
+
 	// TODO: Receive from Migration.`Adapter`
-	migrator.Engine = postgresql.Postgres{Table: table, Database: databaseUrl}
+	migrator.Engine = selectedEngine
+	migrator.SupportedEngines = SUPPORTED_ENGINES
 	migrator.Directory = directory
 	migrator.DatabaseUrl = databaseUrl
 	migrator.Table = table
@@ -42,7 +60,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&config, "config", "", "config file")
 
 	// Migrator configuration
-	rootCmd.PersistentFlags().StringVar(&engine, "engine", "postgres", "database engine")
+	rootCmd.PersistentFlags().StringVar(&engine, "engine", "postgresql", "database engine")
 	rootCmd.PersistentFlags().StringVar(&databaseUrl, "database-url", os.Getenv("DATABASE_URL"), "database url")
 	rootCmd.PersistentFlags().StringVar(&directory, "directory", "./migrations", "migrations directory")
 	rollbackCmd.PersistentFlags().StringVar(&table, "table", "_migrations", "table wherein migrations are tracked")
@@ -52,4 +70,6 @@ func init() {
 	rootCmd.AddCommand(migrateCmd)
 	rootCmd.AddCommand(rollbackCmd)
 	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(pendingCmd)
+	rootCmd.AddCommand(validateCmd)
 }
