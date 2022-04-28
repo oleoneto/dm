@@ -8,6 +8,9 @@
 *.so
 *.dylib
 
+# Don't track executable
+dm
+
 # Test binary, built with `go test -c`
 *.test
 
