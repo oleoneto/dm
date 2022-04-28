@@ -6,8 +6,10 @@ import (
 )
 
 type Migrator struct {
-	Engine    Engine
-	Directory string
+	Engine      Engine
+	Directory   string
+	DatabaseUrl string
+	Table       string
 }
 
 var (

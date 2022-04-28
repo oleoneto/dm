@@ -1,16 +1,20 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/cleopatrio/db-migrator-lib/engines/postgresql"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/spf13/cobra"
 )
 
 var (
-	config    string
-	directory string
-	engine    string // TODO: Limit choices
-	migrator  migrations.Migrator
+	config      string
+	directory   string
+	engine      string // TODO: Limit choices
+	migrator    migrations.Migrator
+	databaseUrl string
+	table       string
 
 	rootCmd = &cobra.Command{
 		Use:   "dm",
@@ -26,14 +30,21 @@ func Execute() error {
 func initConfig() {
 	migrator.Engine = postgresql.Postgres{} // TODO: Receive from Migration.`Adapter`
 	migrator.Directory = directory
+	migrator.DatabaseUrl = databaseUrl
+	migrator.Table = table
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&config, "config", "", "config file (default is $HOME/.dm.yaml)")
-	rootCmd.PersistentFlags().StringVar(&engine, "engine", "postgres", "database engine (default is postgres)")
-	rootCmd.PersistentFlags().StringVar(&directory, "directory", "migrations", "migrations directory (default is $PWD/migrations)")
+	// CLI configuration
+	rootCmd.PersistentFlags().StringVar(&config, "config", "", "config file")
+
+	// Migrator configuration
+	rootCmd.PersistentFlags().StringVar(&engine, "engine", "postgres", "database engine")
+	rootCmd.PersistentFlags().StringVar(&databaseUrl, "database-url", os.Getenv("DATABASE_URL"), "database url")
+	rootCmd.PersistentFlags().StringVar(&directory, "directory", "./migrations", "migrations directory")
+	rollbackCmd.PersistentFlags().StringVar(&table, "table", "_migrations", "table wherein migrations are tracked")
 
 	// Sub-commands
 	rootCmd.AddCommand(listCmd)
