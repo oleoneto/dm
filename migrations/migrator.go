@@ -15,7 +15,7 @@ type Migrator struct {
 }
 
 var (
-	MigrateUp   = 0
+	MigrateUp            = 0
 	MigrateDown          = 1
 	MigrationFilePattern = *regexp.MustCompile(`(?P<Version>^\d{14})_(?P<Name>[aA-zZ]+).ya?ml$`)
 )
@@ -28,10 +28,10 @@ func (instance *Migrator) ListFiles(dir string) []fs.FileInfo {
 	return ListFiles(dir, &MigrationFilePattern)
 }
 
-func (instance *Migrator) PendingMigrations(dir string) map[string]Migration {
+func (instance *Migrator) PendingMigrations(dir string) MigrationList {
 	appliedMigrations := instance.Engine.AppliedMigrations()
-
 	migrations := instance.Build(dir)
+	var sequence MigrationList
 
 	migration := migrations.head
 
@@ -41,13 +41,13 @@ func (instance *Migrator) PendingMigrations(dir string) map[string]Migration {
 		_, applied := appliedMigrations[key]
 
 		if !applied {
-			fmt.Printf("Name: %v, Version: %v\n", migration.Name, migration.Version)
+			sequence.Insert(migration)
 		}
 
 		migration = migration.next
 	}
 
-	return appliedMigrations
+	return sequence
 }
 
 func (instance *Migrator) Run(changes MigrationList, mode int) error {

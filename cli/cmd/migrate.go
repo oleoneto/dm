@@ -36,8 +36,11 @@ var (
 				return
 			}
 
-			m := migrator.Build(directory)
-			migrator.Run(m, migrations.MigrateUp)
+			m := migrator.PendingMigrations(directory)
+
+			if m.Size() > 0 {
+				migrator.Run(m, migrations.MigrateUp)
+			}
 		},
 	}
 )
