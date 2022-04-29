@@ -11,11 +11,11 @@ import (
 
 var (
 	config      string
-	directory   string
-	engine      string // TODO: Limit choices
+	directory   = "./migrations"
+	engine      = "postgresql"
 	migrator    migrations.Migrator
-	databaseUrl string
-	table       string
+	databaseUrl = os.Getenv("DATABASE_URL")
+	table       = "_migrations"
 
 	rootCmd = &cobra.Command{
 		Use:   "dm",
@@ -29,6 +29,11 @@ func Execute() error {
 }
 
 func initConfig() {
+	if databaseUrl == "" {
+		fmt.Fprintf(os.Stderr, "No database specified.\nProvide a value for the flag or set DATABASE_URL in your environment.\n")
+		os.Exit(1)
+	}
+
 	SUPPORTED_ENGINES := map[string]migrations.Engine{
 		"postgresql": postgresql.Postgres{
 			Name:      "PostgreSQL",
@@ -57,13 +62,13 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// CLI configuration
-	rootCmd.PersistentFlags().StringVar(&config, "config", "", "config file")
+	rootCmd.PersistentFlags().StringVar(&config, "config", config, "config file")
 
 	// Migrator configuration
-	rootCmd.PersistentFlags().StringVar(&engine, "engine", "postgresql", "database engine")
-	rootCmd.PersistentFlags().StringVar(&databaseUrl, "database-url", os.Getenv("DATABASE_URL"), "database url")
-	rootCmd.PersistentFlags().StringVar(&directory, "directory", "./migrations", "migrations directory")
-	rootCmd.PersistentFlags().StringVar(&table, "table", "_migrations", "table wherein migrations are tracked")
+	rootCmd.PersistentFlags().StringVar(&engine, "engine", engine, "database engine")
+	rootCmd.PersistentFlags().StringVar(&databaseUrl, "database-url", databaseUrl, "database url")
+	rootCmd.PersistentFlags().StringVar(&directory, "directory", directory, "migrations directory")
+	rootCmd.PersistentFlags().StringVar(&table, "table", table, "table wherein migrations are tracked")
 
 	// Sub-commands
 	rootCmd.AddCommand(listCmd)
