@@ -10,12 +10,12 @@ type MigrationRunner interface {
 	/**
 	* @brief Runs migrations
 	 */
-	Up(changes Migrations) error
+	Up(changes MigrationList) error
 
 	/**
 	 * @brief Reverts migrations
 	 */
-	Down(changes Migrations) error
+	Down(changes MigrationList) error
 }
 
 type Tracker interface {
@@ -37,27 +37,20 @@ type Tracker interface {
 	/**
 	 * @brief Indicator of whether migrations are current or up-to-date
 	 */
-	IsUpToDate(changes Migrations) bool
+	IsUpToDate(changes MigrationList) bool
 
-	/**
-	 * @brief Indicator of whether the database is being managed by this tool
-	 */
+	// IsTracked - Indicator of whether the database is being managed by this tool
 	IsTracked() bool
 
-	/**
-	 * @brief Indicator of whether the database has any migrations
-	 */
+
+	// IsEmpty - Indicator of whether the database has any migrations
 	IsEmpty() bool
 
-	/**
-	 * @brief Returns all applied/saved migrations
-	 */
+	// AppliedMigrations - Returns all applied/saved migrations
 	AppliedMigrations() map[string]Migration
 }
 
 type Validator interface {
-	/**
-	 * @brief Given a set of migrations, this method should return whether or not the migrations are valid.
-	 */
-	Validate(changes Migrations) bool
+	// Validate - Given a set of migrations, this method should return whether or not the migrations are valid.
+	Validate(changes MigrationList) bool
 }

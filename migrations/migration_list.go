@@ -1,0 +1,109 @@
+package migrations
+
+import "fmt"
+
+type MigrationList struct {
+	head *Migration
+	tail *Migration
+	size int
+}
+
+func (List *MigrationList) Size() int {
+	return List.size
+}
+
+func (List *MigrationList) IsEmpty() bool {
+	return List.size == 0
+}
+
+// GetHead - Returns the node at the start of the list.
+func (List *MigrationList) GetHead() *Migration {
+	return List.head
+}
+
+// GetTail - Returns the node at the end of the list.
+func (List *MigrationList) GetTail() *Migration {
+	return List.tail
+}
+
+// Insert - Adds a new node to the end of the list.
+func (List *MigrationList) Insert(node *Migration) {
+	if List.head == nil {
+		List.head = node
+		List.tail = node
+	} else {
+		node.previous = List.tail
+		List.tail.next = node
+		List.tail = node
+	}
+
+	List.size += 1
+}
+
+// Reverse - Traverses list and swaps the direction of the list.
+func (List *MigrationList) Reverse() {
+	var prev *Migration
+	curr := List.head
+
+	// No head. An empty list.
+	if curr == nil {
+		return
+	}
+
+	// Swap pointers
+	for curr != nil {
+		next := curr.next
+		curr.next = prev
+		prev = curr
+		curr = next
+	}
+
+	List.head = prev
+}
+
+// Display - Traverses list and prints all of its elements.
+func (List *MigrationList) Display() {
+	curr := List.head
+
+	for curr != nil {
+		format := fmt.Sprintf("%+v", curr.Name)
+		if curr.next != nil {
+			format += " -> "
+		}
+		fmt.Print(format)
+
+		curr = curr.next
+	}
+
+	fmt.Println()
+}
+
+// Find - Traverses the list in search for a given node.
+func (List *MigrationList) Find(identifier string) (MigrationList, bool) {
+	curr := List.head
+	var sequence MigrationList
+
+	if curr == nil {
+		return sequence, false
+	}
+
+	for curr != nil {
+		sequence.Insert(&Migration{
+			Changes:  curr.Changes,
+			Engine:   curr.Engine,
+			FileName: curr.FileName,
+			Id:       curr.Id,
+			Name:     curr.Name,
+			Schema:   curr.Schema,
+			Version:  curr.Version,
+		})
+
+		if curr.Version == identifier || curr.Name == identifier {
+			return sequence, true
+		}
+
+		curr = curr.next
+	}
+
+	return sequence, false
+}

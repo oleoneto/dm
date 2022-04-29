@@ -1,7 +1,6 @@
 package migrations
 
 import (
-	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -10,6 +9,7 @@ import (
 	"runtime"
 )
 
+// MatchingFiles - Finds all files that statisfy a regex in the specified directory
 func MatchingFiles(dir string, pattern *regexp.Regexp) ([]fs.FileInfo, error) {
 	matches := []fs.FileInfo{}
 
@@ -28,34 +28,30 @@ func MatchingFiles(dir string, pattern *regexp.Regexp) ([]fs.FileInfo, error) {
 	return matches, nil
 }
 
-func BuildMigrations(dir string, pattern *regexp.Regexp) Migrations {
-	var changes Migrations
+func BuildMigrations(dir string, pattern *regexp.Regexp) MigrationList {
+	var changes MigrationList
 
 	files, _ := MatchingFiles(dir, pattern)
 
 	for _, file := range files {
 		var mg Migration
 
-		mg.Load(file, dir)
+		_ = mg.Load(file, dir)
 
-		changes = append(changes, mg)
+		changes.Insert(&mg)
 	}
 
 	return changes
 }
 
-func ListFiles(dir string, pattern *regexp.Regexp) error {
+func ListFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
 	files, err := MatchingFiles(dir, pattern)
 
 	if err != nil {
-		return err
+		return []fs.FileInfo{}
 	}
 
-	for _, file := range files {
-		fmt.Println(file.Name())
-	}
-
-	return nil
+	return files
 }
 
 func CurrentFilepath() string {

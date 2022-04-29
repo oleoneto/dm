@@ -20,12 +20,19 @@ type Migration struct {
 		Up   string `yaml:"up"`
 		Down string `yaml:"down"`
 	} `yaml:"changes"`
+	next     *Migration
+	previous *Migration
 }
 
 type MigratorVersion struct {
 	Id      int    `json:"id"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
+}
+
+// MARK: - Implements LinkedList behavior
+func (M *Migration) Next() *Migration {
+	return M.next
 }
 
 // MARK: - Implements Sortable Interface
@@ -53,10 +60,10 @@ func (instance *Migration) Load(file fs.FileInfo, parent string) error {
 
 	err := yaml.Unmarshal(contents, &instance)
 
-	match := FILE_PATTERN.FindStringSubmatch(file.Name())
+	match := MigrationFilePattern.FindStringSubmatch(file.Name())
 
 	instance.FileName = file.Name()
-	instance.Version = match[FILE_PATTERN.SubexpIndex("Version")]
+	instance.Version = match[MigrationFilePattern.SubexpIndex("Version")]
 
 	if err != nil {
 		return err

@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"fmt"
+	"io/fs"
 	"regexp"
 )
 
@@ -14,43 +15,47 @@ type Migrator struct {
 }
 
 var (
-	MIGRATE_UP   = 0
-	MIGRATE_DOWN = 1
-	FILE_PATTERN = *regexp.MustCompile(`(?P<Version>^\d{14})_(?P<Name>[aA-zZ]+).ya?ml$`)
+	MigrateUp   = 0
+	MigrateDown          = 1
+	MigrationFilePattern = *regexp.MustCompile(`(?P<Version>^\d{14})_(?P<Name>[aA-zZ]+).ya?ml$`)
 )
 
-func (instance *Migrator) Build(dir string) Migrations {
-	return BuildMigrations(dir, &FILE_PATTERN)
+func (instance *Migrator) Build(dir string) MigrationList {
+	return BuildMigrations(dir, &MigrationFilePattern)
 }
 
-func (instance *Migrator) ListFiles(dir string) error {
-	return ListFiles(dir, &FILE_PATTERN)
+func (instance *Migrator) ListFiles(dir string) []fs.FileInfo {
+	return ListFiles(dir, &MigrationFilePattern)
 }
 
 func (instance *Migrator) PendingMigrations(dir string) map[string]Migration {
 	appliedMigrations := instance.Engine.AppliedMigrations()
 
-	migrationFiles := instance.Build(dir)
+	migrations := instance.Build(dir)
 
-	for _, file := range migrationFiles {
-		key := fmt.Sprintf("%v_%v", file.Version, file.Name)
+	migration := migrations.head
+
+	for migration != nil {
+		key := fmt.Sprintf("%v_%v", migration.Version, migration.Name)
 
 		_, applied := appliedMigrations[key]
 
 		if !applied {
-			fmt.Printf("Name: %v, Version: %v\n", file.Name, file.Version)
+			fmt.Printf("Name: %v, Version: %v\n", migration.Name, migration.Version)
 		}
+
+		migration = migration.next
 	}
 
 	return appliedMigrations
 }
 
-func (instance *Migrator) Run(changes []Migration, mode int) error {
+func (instance *Migrator) Run(changes MigrationList, mode int) error {
 	switch mode {
-	case MIGRATE_UP:
+	case MigrateUp:
 		return instance.Engine.Up(changes)
 
-	case MIGRATE_DOWN:
+	case MigrateDown:
 		return instance.Engine.Down(changes)
 	}
 
@@ -62,6 +67,6 @@ func (instance *Migrator) Status() {
 	fmt.Printf("Current version: %v\n", version)
 }
 
-func (instance *Migrator) Validate(changes Migrations) bool {
+func (instance *Migrator) Validate(changes MigrationList) bool {
 	return instance.Engine.Validate(changes)
 }

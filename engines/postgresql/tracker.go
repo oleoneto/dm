@@ -20,12 +20,12 @@ func (engine Postgres) IsEmpty() bool {
 	return tracked && (version == "")
 }
 
-func (engine Postgres) IsUpToDate(changes migrations.Migrations) bool {
+func (engine Postgres) IsUpToDate(changes migrations.MigrationList) bool {
 	if !engine.IsTracked() {
 		engine.StartTracking()
 	}
 
-	recent := changes[len(changes)-1]
+	recent := changes.GetTail()
 	version, tracked := engine.Version()
 	return tracked && (version == recent.Version)
 }
@@ -45,10 +45,10 @@ func (engine Postgres) Version() (string, bool) {
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
 			// VERBOSE: fmt.Printf("%s: Database is not yet being tracked.\n", engineName)
-			return "", false
+			return "0", false
 		} else if strings.Contains(err.Error(), "no rows") {
 			// VERBOSE: fmt.Printf("%s: No migrations yet.\n", engineName)
-			return "", true
+			return "0", true
 		}
 
 		log.Fatalf("%s: Error checking status. %v", engineName, err)
