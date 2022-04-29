@@ -63,7 +63,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&engine, "engine", "postgresql", "database engine")
 	rootCmd.PersistentFlags().StringVar(&databaseUrl, "database-url", os.Getenv("DATABASE_URL"), "database url")
 	rootCmd.PersistentFlags().StringVar(&directory, "directory", "./migrations", "migrations directory")
-	rollbackCmd.PersistentFlags().StringVar(&table, "table", "_migrations", "table wherein migrations are tracked")
+	rootCmd.PersistentFlags().StringVar(&table, "table", "_migrations", "table wherein migrations are tracked")
 
 	// Sub-commands
 	rootCmd.AddCommand(listCmd)
