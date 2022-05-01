@@ -11,36 +11,34 @@ import (
 var (
 	rollbackTo string
 
-	// TODO: Add support for rolling back migrations up to a given version
 	rollbackCmd = &cobra.Command{
 		Use:   "rollback",
 		Short: "Rollback migration(s)",
 		Run: func(cmd *cobra.Command, args []string) {
+			var err error
+			var version VersionFlag
 
 			if rollbackTo != "" {
-				version, err := parsedVersionFlag(rollbackTo)
+				version, err = parsedVersionFlag(rollbackTo)
 
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
 				}
-
-				files := Engine.LoadFiles(directory, &FilePattern)
-				list := Engine.BuildMigrations(files)
-				list.Reverse()
-
-				sequence, found := list.Find(strcase.ToCamel(version.Value))
-
-				if found {
-					// DEBUG: sequence.Display()
-					Engine.Down(sequence)
-				}
-
-				return
 			}
 
-			files := Engine.LoadFiles(directory, &FilePattern)
-			list := Engine.BuildMigrations(files)
+			list := Engine.AppliedMigrations()
 			list.Reverse()
+
+			if version.Value != "" {
+				sequence, found := list.Find(strcase.ToCamel(version.Value))
+
+				if !found {
+					return
+				}
+
+				list = sequence
+			}
+
 			Engine.Down(list)
 		},
 	}

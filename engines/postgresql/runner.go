@@ -15,7 +15,7 @@ func (engine Postgres) Up(changes migrations.MigrationList) error {
 
 	engine.acquireDatabaseConnection()
 
-	if engine.IsUpToDate(changes) {
+	if changes.Size() < 1 || engine.IsUpToDate(changes) {
 		fmt.Println("Migrations are up-to-date.")
 		return nil
 	}

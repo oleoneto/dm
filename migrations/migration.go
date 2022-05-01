@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -26,10 +27,10 @@ type Migration struct {
 }
 
 type MigratorVersion struct {
-	Id        int    `json:"id"`
-	Name      string `json:"name"`
-	Version   string `json:"version"`
-	CreatedAt string `json:"created_at"`
+	Id        int       `json:"id"`
+	Name      string    `json:"name"`
+	Version   string    `json:"version"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
 
 // MARK: - Implements LinkedList behavior
@@ -51,6 +52,18 @@ func (m Migrations) Less(left, right int) bool {
 
 func (m Migrations) Swap(left, right int) {
 	m[left], m[right] = m[right], m[left]
+}
+
+// MARK: - Implements Hashable
+
+func (m Migrations) ToHash() map[string]Migration {
+	hash := map[string]Migration{}
+
+	for _, v := range m {
+		hash[v.Version] = v
+	}
+
+	return hash
 }
 
 // MARK: - Migration loader

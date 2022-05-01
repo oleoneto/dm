@@ -4,9 +4,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"log"
-	"path"
 	"regexp"
-	"runtime"
 )
 
 // MatchingFiles - Finds all files that statisfy a regex in the specified directory
@@ -50,11 +48,4 @@ func LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
 	}
 
 	return files
-}
-
-func CurrentFilepath() string {
-	_, name, _, _ := runtime.Caller(1)
-	path := path.Join(path.Dir(name), ".")
-
-	return path
 }

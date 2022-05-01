@@ -107,3 +107,38 @@ func (List *MigrationList) Find(identifier string) (MigrationList, bool) {
 
 	return sequence, false
 }
+
+// FromMap - Inserts map elements into the list.
+func (List *MigrationList) FromMap(m map[string]Migration) {
+	for _, value := range m {
+		List.Insert(&value)
+	}
+}
+
+// ToMap - Transforms the list into a map.
+func (List *MigrationList) ToMap() map[string]Migration {
+	m := map[string]Migration{}
+
+	curr := List.head
+
+	for curr != nil {
+		m[curr.Version] = *curr
+		curr = curr.next
+	}
+
+	return m
+}
+
+// ToSlice - Transforms the list into a slice.
+func (List *MigrationList) ToSlice() Migrations {
+	m := Migrations{}
+
+	curr := List.head
+
+	for curr != nil {
+		m = append(m, *curr)
+		curr = curr.next
+	}
+
+	return m
+}

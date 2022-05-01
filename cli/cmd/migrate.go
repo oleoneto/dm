@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 )
@@ -12,35 +11,34 @@ import (
 var (
 	migrateTo string
 
-	// TODO: Add support for running migrations down to a given version
 	migrateCmd = &cobra.Command{
 		Use:   "migrate",
 		Short: "Run migration(s)",
 		Run: func(cmd *cobra.Command, args []string) {
+			var err error
+			var version VersionFlag
 
 			if migrateTo != "" {
-				version, err := parsedVersionFlag(migrateTo)
+				version, err = parsedVersionFlag(migrateTo)
 
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
 				}
+			}
 
-				m := migrator.Build(directory)
-				sequence, found := m.Find(strcase.ToCamel(version.Value))
+			list := Engine.PendingMigrations()
 
-				if found {
-					// DEBUG: sequence.Display()
-					migrator.Run(sequence, migrations.MigrateUp)
+			if version.Value != "" {
+				sequence, found := list.Find(strcase.ToCamel(version.Value))
+
+				if !found {
+					return
 				}
 
-				return
+				list = sequence
 			}
 
-			m := migrator.PendingMigrations(directory)
-
-			if m.Size() > 0 {
-				migrator.Run(m, migrations.MigrateUp)
-			}
+			Engine.Up(list)
 		},
 	}
 )

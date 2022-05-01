@@ -31,8 +31,11 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			applied := Engine.AppliedMigrations()
 
-			for _, migration := range applied {
-				fmt.Printf("Name: %v, Version: %v\n", migration.Name, migration.Version)
+			migration := applied.GetHead()
+
+			for migration != nil {
+				fmt.Println(migration.FileName)
+				migration = migration.Next()
 			}
 		},
 	}
@@ -43,8 +46,11 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			pending := Engine.PendingMigrations()
 
-			for _, migration := range pending {
-				fmt.Printf("Name: %v, Version: %v\n", migration.Name, migration.Version)
+			migration := pending.GetHead()
+
+			for migration != nil {
+				fmt.Println(migration.FileName)
+				migration = migration.Next()
 			}
 		},
 	}

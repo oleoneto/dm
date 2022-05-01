@@ -28,6 +28,7 @@ func (engine Postgres) IsUpToDate(changes migrations.MigrationList) bool {
 	}
 
 	recent := changes.GetTail()
+
 	version, tracked := engine.Version()
 	return tracked && (version == recent.Version)
 }
@@ -39,7 +40,7 @@ func (engine Postgres) Version() (string, bool) {
 
 	rows, _ := Pg().Query(
 		context.Background(),
-		fmt.Sprintf("SELECT * FROM %v ORDER BY version DESC LIMIT 1;", engine.Table),
+		fmt.Sprintf("SELECT id, name, version FROM %v ORDER BY version DESC LIMIT 1;", engine.Table),
 	)
 
 	err := pgxscan.ScanOne(&version, rows)
@@ -100,52 +101,94 @@ func (engine Postgres) BuildMigrations(files []fs.FileInfo) migrations.Migration
 	return migrations.BuildMigrations(files, engine.Directory, engine.FilePattern)
 }
 
-func (engine Postgres) AppliedMigrations() map[string]migrations.Migration {
-	var applied migrations.Migrations
-	mapping := map[string]migrations.Migration{}
+func (engine Postgres) PendingMigrations() migrations.MigrationList {
+	files := engine.LoadFiles(engine.Directory, engine.FilePattern)
+	list := engine.BuildMigrations(files)
+
+	migrated := migrations.Migrations{}
+	res := migrations.MigrationList{}
+
+	// NOTE: No migrations in database
+	if engine.IsEmpty() || !engine.IsTracked() {
+		return list
+	}
 
 	engine.acquireDatabaseConnection()
 
-	rows, _ := Pg().Query(
-		context.Background(),
-		fmt.Sprintf("SELECT * FROM %v;", engine.Table),
-	)
-
-	err := pgxscan.ScanAll(&applied, rows)
+	rows, _ := Pg().Query(context.Background(), fmt.Sprintf("SELECT id, name, version FROM %v;", engine.Table))
+	err := pgxscan.ScanAll(&migrated, rows)
 
 	if err != nil {
-		fmt.Printf("%v: An error occurred.\nError: %v\n", engineName, err)
-		return mapping
+		fmt.Printf("%v: An error occurred.\nError: %v\n", engine.Name, err)
 	}
 
-	// FIX: May need to refactor this logic
-	for _, m := range applied {
-		key := fmt.Sprintf("%v_%v", m.Version, m.Name)
-		mapping[key] = m
-	}
+	migratedHash := migrated.ToHash()
 
-	return mapping
-}
+	curr := list.GetHead()
 
-func (engine Postgres) PendingMigrations() map[string]migrations.Migration {
-	pending := map[string]migrations.Migration{}
-	appliedMigrations := engine.AppliedMigrations()
-
-	files := engine.LoadFiles(engine.Directory, engine.FilePattern)
-	migrations := engine.BuildMigrations(files)
-
-	migration := migrations.GetHead()
-
-	for migration != nil {
-		key := fmt.Sprintf("%v_%v", migration.Version, migration.Name)
-		_, applied := appliedMigrations[key]
+	for curr != nil {
+		_, applied := migratedHash[curr.Version]
 
 		if !applied {
-			pending[migration.Version] = *migration
+			res.Insert(&migrations.Migration{
+				Changes:  curr.Changes,
+				Engine:   curr.Engine,
+				FileName: curr.FileName,
+				Id:       curr.Id,
+				Name:     curr.Name,
+				Schema:   curr.Schema,
+				Version:  curr.Version,
+			})
 		}
 
-		migration = migration.Next()
+		curr = curr.Next()
 	}
 
-	return pending
+	return res
+}
+
+func (engine Postgres) AppliedMigrations() migrations.MigrationList {
+	files := engine.LoadFiles(engine.Directory, engine.FilePattern)
+	list := engine.BuildMigrations(files)
+
+	migrated := migrations.Migrations{}
+	res := migrations.MigrationList{}
+
+	// NOTE: No migrations in database
+	if engine.IsEmpty() || !engine.IsTracked() {
+		return migrations.MigrationList{}
+	}
+
+	engine.acquireDatabaseConnection()
+
+	rows, _ := Pg().Query(context.Background(), fmt.Sprintf("SELECT id, name, version FROM %v;", engine.Table))
+	err := pgxscan.ScanAll(&migrated, rows)
+
+	if err != nil {
+		fmt.Printf("%v: An error occurred.\nError: %v\n", engine.Name, err)
+	}
+
+	migratedHash := migrated.ToHash()
+
+	curr := list.GetHead()
+
+	for curr != nil {
+		_, applied := migratedHash[curr.Version]
+
+		if applied {
+			res.Insert(&migrations.Migration{
+				Changes:  curr.Changes,
+				Engine:   curr.Engine,
+				FileName: curr.FileName,
+				Id:       curr.Id,
+				Name:     curr.Name,
+				Schema:   curr.Schema,
+				Version:  curr.Version,
+			})
+		}
+
+		curr = curr.Next()
+	}
+
+	return res
 }

@@ -48,10 +48,10 @@ type Tracker interface {
 	IsEmpty() bool
 
 	// AppliedMigrations - Returns all applied/saved migrations
-	AppliedMigrations() map[string]Migration
+	AppliedMigrations() MigrationList
 
 	// PendingMigrations - Returns all non-applied/saved migrations.
-	PendingMigrations() map[string]Migration
+	PendingMigrations() MigrationList
 }
 
 type Validator interface {
