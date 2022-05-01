@@ -58,6 +58,7 @@ func (List *MigrationList) Reverse() {
 		curr = next
 	}
 
+	List.tail = List.head
 	List.head = prev
 }
 
