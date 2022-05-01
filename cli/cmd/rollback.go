@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 )
@@ -25,22 +24,24 @@ var (
 					fmt.Fprintln(os.Stderr, err)
 				}
 
-				m := migrator.Build(directory)
-				m.Reverse()
+				files := Engine.LoadFiles(directory, &FilePattern)
+				list := Engine.BuildMigrations(files)
+				list.Reverse()
 
-				sequence, found := m.Find(strcase.ToCamel(version.Value))
+				sequence, found := list.Find(strcase.ToCamel(version.Value))
 
 				if found {
 					// DEBUG: sequence.Display()
-					migrator.Run(sequence, migrations.MigrateDown)
+					Engine.Down(sequence)
 				}
 
 				return
 			}
 
-			m := migrator.Build(directory)
-			m.Reverse()
-			migrator.Run(m, migrations.MigrateDown)
+			files := Engine.LoadFiles(directory, &FilePattern)
+			list := Engine.BuildMigrations(files)
+			list.Reverse()
+			Engine.Down(list)
 		},
 	}
 )
