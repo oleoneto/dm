@@ -9,7 +9,7 @@ import (
 var (
 	validateCmd = &cobra.Command{
 		Use:   "validate",
-		Short: "Validate configuration of migration files",
+		Short: "Validate the configuration of migration files",
 		Run: func(cmd *cobra.Command, args []string) {
 			files := Engine.LoadFiles(directory, &FilePattern)
 

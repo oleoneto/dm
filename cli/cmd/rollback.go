@@ -45,5 +45,5 @@ var (
 )
 
 func init() {
-	rollbackCmd.PersistentFlags().StringVar(&rollbackTo, "version", "", "rollback to this version")
+	rollbackCmd.PersistentFlags().StringVar(&rollbackTo, "version", "", "rollback this version (and anything applied after it)")
 }
