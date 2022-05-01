@@ -1,53 +1,57 @@
 package migrations
 
+import (
+	"io/fs"
+	"regexp"
+)
+
 type Engine interface {
+	FileLoader
 	MigrationRunner
 	Tracker
 	Validator
 }
 
+type FileLoader interface {
+	// LoadFiles - Loads files from the given directory matching the provided regex
+	LoadFiles(string, *regexp.Regexp) []fs.FileInfo
+}
+
 type MigrationRunner interface {
-	/**
-	* @brief Runs migrations
-	 */
+	// Up - Runs migrations
 	Up(changes MigrationList) error
 
-	/**
-	 * @brief Reverts migrations
-	 */
+	// Down - Reverts migrations
 	Down(changes MigrationList) error
 }
 
 type Tracker interface {
-	/**
-	 * @brief Prepares database for migration tracking
-	 */
+	// ... -
+	BuildMigrations([]fs.FileInfo) MigrationList
+
+	// StartTracking - Prepares database for migration tracking
 	StartTracking() error
 
-	/**
-	 * @brief Stops tracking database migrations
-	 */
+	// StopTracking - Stops tracking database migrations
 	StopTracking() error
 
-	/**
-	 * @brief Return the version of the last applied migration. The returned boolean should indicate if the database is being tracked
-	 */
+	// Version - Return the version of the last applied migration. The returned boolean should indicate if the database is being tracked
 	Version() (string, bool)
 
-	/**
-	 * @brief Indicator of whether migrations are current or up-to-date
-	 */
+	// IsUpToDate - Indicator of whether migrations are current or up-to-date
 	IsUpToDate(changes MigrationList) bool
 
 	// IsTracked - Indicator of whether the database is being managed by this tool
 	IsTracked() bool
-
 
 	// IsEmpty - Indicator of whether the database has any migrations
 	IsEmpty() bool
 
 	// AppliedMigrations - Returns all applied/saved migrations
 	AppliedMigrations() map[string]Migration
+
+	// PendingMigrations - Returns all non-applied/saved migrations.
+	PendingMigrations() map[string]Migration
 }
 
 type Validator interface {

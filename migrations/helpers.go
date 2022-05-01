@@ -28,15 +28,13 @@ func MatchingFiles(dir string, pattern *regexp.Regexp) ([]fs.FileInfo, error) {
 	return matches, nil
 }
 
-func BuildMigrations(dir string, pattern *regexp.Regexp) MigrationList {
+func BuildMigrations(files []fs.FileInfo, dir string, pattern *regexp.Regexp) MigrationList {
 	var changes MigrationList
-
-	files, _ := MatchingFiles(dir, pattern)
 
 	for _, file := range files {
 		var mg Migration
 
-		_ = mg.Load(file, dir)
+		_ = mg.Load(file, dir, pattern)
 
 		changes.Insert(&mg)
 	}
@@ -44,7 +42,7 @@ func BuildMigrations(dir string, pattern *regexp.Regexp) MigrationList {
 	return changes
 }
 
-func ListFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
+func LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
 	files, err := MatchingFiles(dir, pattern)
 
 	if err != nil {

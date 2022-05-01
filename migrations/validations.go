@@ -14,12 +14,12 @@ func Validate(changes MigrationList) bool {
 	change := changes.head
 
 	for change != nil {
-		if visitedNames[change.Name] {
-			return invalidChange(*change, "duplicate migration name")
-		}
-
 		if visitedVersions[change.Version] {
 			return invalidChange(*change, "duplicate migration version")
+		}
+
+		if visitedNames[change.Name] {
+			return invalidChange(*change, "duplicate migration name")
 		}
 
 		// TODO: Check if migration is using a supported engine
@@ -57,6 +57,6 @@ func Validate(changes MigrationList) bool {
 }
 
 func invalidChange(change Migration, reason string) bool {
-	fmt.Printf("Invalid migration: %v (%v). Reason: %v.\n", change.Name, change.Version, reason)
+	fmt.Printf("Invalid migration: %v.\nReason: %v.\n", change.FileName, reason)
 	return false
 }

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
 
 	"gopkg.in/yaml.v2"
 )
@@ -25,9 +26,10 @@ type Migration struct {
 }
 
 type MigratorVersion struct {
-	Id      int    `json:"id"`
-	Name    string `json:"name"`
-	Version string `json:"version"`
+	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	Version   string `json:"version"`
+	CreatedAt string `json:"created_at"`
 }
 
 // MARK: - Implements LinkedList behavior
@@ -53,17 +55,17 @@ func (m Migrations) Swap(left, right int) {
 
 // MARK: - Migration loader
 
-func (instance *Migration) Load(file fs.FileInfo, parent string) error {
+func (instance *Migration) Load(file fs.FileInfo, parent string, pattern *regexp.Regexp) error {
 	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", parent, file.Name()))
 
 	contents, _ := ioutil.ReadFile(path)
 
 	err := yaml.Unmarshal(contents, &instance)
 
-	match := MigrationFilePattern.FindStringSubmatch(file.Name())
+	match := pattern.FindStringSubmatch(file.Name())
 
 	instance.FileName = file.Name()
-	instance.Version = match[MigrationFilePattern.SubexpIndex("Version")]
+	instance.Version = match[pattern.SubexpIndex("Version")]
 
 	if err != nil {
 		return err

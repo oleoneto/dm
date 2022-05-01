@@ -3,15 +3,17 @@ package postgresql
 import (
 	"context"
 	"log"
+	"regexp"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Postgres struct {
-	Name      string
-	Table     string
-	Database  string
-	Directory string
+	Name        string
+	Table       string
+	Database    string
+	Directory   string
+	FilePattern *regexp.Regexp
 }
 
 const engineName string = "PostgreSQL"

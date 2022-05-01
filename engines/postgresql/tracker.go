@@ -3,7 +3,9 @@ package postgresql
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/cleopatrio/db-migrator-lib/migrations"
@@ -68,6 +70,7 @@ func (engine Postgres) StartTracking() error {
 			id SERIAL,
 			version varchar UNIQUE NOT NULL,
 			name varchar UNIQUE NOT NULL,
+			created_at timestamp NOT NULL DEFAULT now(),
 
 			PRIMARY KEY(id)
 		);`, engine.Table),
@@ -87,6 +90,14 @@ func (engine Postgres) StopTracking() error {
 	)
 
 	return rows.Scan()
+}
+
+func (engine Postgres) LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
+	return migrations.LoadFiles(dir, pattern)
+}
+
+func (engine Postgres) BuildMigrations(files []fs.FileInfo) migrations.MigrationList {
+	return migrations.BuildMigrations(files, engine.Directory, engine.FilePattern)
 }
 
 func (engine Postgres) AppliedMigrations() map[string]migrations.Migration {
@@ -114,4 +125,27 @@ func (engine Postgres) AppliedMigrations() map[string]migrations.Migration {
 	}
 
 	return mapping
+}
+
+func (engine Postgres) PendingMigrations() map[string]migrations.Migration {
+	pending := map[string]migrations.Migration{}
+	appliedMigrations := engine.AppliedMigrations()
+
+	files := engine.LoadFiles(engine.Directory, engine.FilePattern)
+	migrations := engine.BuildMigrations(files)
+
+	migration := migrations.GetHead()
+
+	for migration != nil {
+		key := fmt.Sprintf("%v_%v", migration.Version, migration.Name)
+		_, applied := appliedMigrations[key]
+
+		if !applied {
+			pending[migration.Version] = *migration
+		}
+
+		migration = migration.Next()
+	}
+
+	return pending
 }
