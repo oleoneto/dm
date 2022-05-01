@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/cleopatrio/db-migrator-lib/engines/postgresql"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
@@ -13,9 +14,10 @@ var (
 	config      string
 	directory   = "./migrations"
 	engine      = "postgresql"
-	migrator    migrations.Migrator
+	Engine      migrations.Engine
 	databaseUrl = os.Getenv("DATABASE_URL")
 	table       = "_migrations"
+	FilePattern = *regexp.MustCompile(`(?P<Version>^\d{14})_(?P<Name>[aA-zZ]+).ya?ml$`)
 
 	rootCmd = &cobra.Command{
 		Use:   "dm",
@@ -36,26 +38,21 @@ func initConfig() {
 
 	SUPPORTED_ENGINES := map[string]migrations.Engine{
 		"postgresql": postgresql.Postgres{
-			Name:      "PostgreSQL",
-			Table:     table,
-			Database:  databaseUrl,
-			Directory: directory,
+			Name:        "PostgreSQL",
+			Table:       table,
+			Database:    databaseUrl,
+			Directory:   directory,
+			FilePattern: &FilePattern,
 		},
 	}
 
 	selectedEngine, ok := SUPPORTED_ENGINES[engine]
+	Engine = selectedEngine
 
 	if !ok {
 		fmt.Fprintf(os.Stderr, "Unsupported engine '%v'.\n", engine)
 		os.Exit(1)
 	}
-
-	// TODO: Receive from Migration.`Adapter`
-	migrator.Engine = selectedEngine
-	migrator.SupportedEngines = SUPPORTED_ENGINES
-	migrator.Directory = directory
-	migrator.DatabaseUrl = databaseUrl
-	migrator.Table = table
 }
 
 func init() {
@@ -71,10 +68,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&table, "table", table, "table wherein migrations are tracked")
 
 	// Sub-commands
-	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(migrateCmd)
 	rootCmd.AddCommand(rollbackCmd)
-	rootCmd.AddCommand(statusCmd)
-	rootCmd.AddCommand(pendingCmd)
 	rootCmd.AddCommand(validateCmd)
 }
