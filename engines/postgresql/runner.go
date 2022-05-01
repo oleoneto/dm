@@ -8,8 +8,9 @@ import (
 )
 
 func (engine Postgres) Up(changes migrations.MigrationList) error {
+	valid, _ := engine.Validate(changes)
 
-	if !engine.Validate(changes) {
+	if !valid {
 		return new(migrations.ValidationError)
 	}
 
@@ -40,7 +41,9 @@ func (engine Postgres) Up(changes migrations.MigrationList) error {
 
 func (engine Postgres) Down(changes migrations.MigrationList) error {
 
-	if !engine.Validate(changes) {
+	valid, _ := engine.Validate(changes)
+
+	if !valid {
 		return new(migrations.ValidationError)
 	}
 

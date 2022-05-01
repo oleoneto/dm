@@ -1,7 +1,6 @@
 package migrations
 
 import (
-	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"path/filepath"
@@ -15,15 +14,17 @@ type Migration struct {
 	Id       int
 	FileName string
 	Version  string
-	Schema   int    `yaml:"schema"`
-	Name     string `yaml:"name"`
-	Engine   string `yaml:"engine"`
-	Changes  struct {
-		Up   string `yaml:"up"`
-		Down string `yaml:"down"`
-	} `yaml:"changes"`
+	Schema   int     `yaml:"schema"`
+	Name     string  `yaml:"name"`
+	Engine   string  `yaml:"engine"`
+	Changes  Changes `yaml:"changes"`
 	next     *Migration
 	previous *Migration
+}
+
+type Changes struct {
+	Up   string `yaml:"up"`
+	Down string `yaml:"down"`
 }
 
 type MigratorVersion struct {
@@ -69,20 +70,26 @@ func (m Migrations) ToHash() map[string]Migration {
 // MARK: - Migration loader
 
 func (instance *Migration) Load(file fs.FileInfo, parent string, pattern *regexp.Regexp) error {
-	path, _ := filepath.Abs(fmt.Sprintf("%v/%v", parent, file.Name()))
+	path := filepath.Join(parent, file.Name())
 
-	contents, _ := ioutil.ReadFile(path)
+	path, _ = filepath.Abs(path)
 
-	err := yaml.Unmarshal(contents, &instance)
+	contents, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(contents, &instance)
+
+	if err != nil {
+		return err
+	}
 
 	match := pattern.FindStringSubmatch(file.Name())
 
 	instance.FileName = file.Name()
 	instance.Version = match[pattern.SubexpIndex("Version")]
-
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

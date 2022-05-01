@@ -56,5 +56,5 @@ type Tracker interface {
 
 type Validator interface {
 	// Validate - Given a set of migrations, this method should return whether or not the migrations are valid.
-	Validate(changes MigrationList) bool
+	Validate(changes MigrationList) (bool, string)
 }

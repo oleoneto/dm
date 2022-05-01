@@ -19,10 +19,14 @@ var (
 			}
 
 			migrations := Engine.BuildMigrations(files)
+			valid, reason := Engine.Validate(migrations)
 
-			if Engine.Validate(migrations) {
+			if valid && reason == "" {
 				fmt.Println("Migrations are valid.")
+				return
 			}
+
+			fmt.Println(reason)
 		},
 	}
 )
