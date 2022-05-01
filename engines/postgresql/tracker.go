@@ -47,14 +47,14 @@ func (engine Postgres) Version() (string, bool) {
 
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
-			// VERBOSE: fmt.Printf("%s: Database is not yet being tracked.\n", engineName)
+			// VERBOSE: fmt.Printf("%s: Database is not yet being tracked.\n", engine.Name)
 			return "0", false
 		} else if strings.Contains(err.Error(), "no rows") {
-			// VERBOSE: fmt.Printf("%s: No migrations yet.\n", engineName)
+			// VERBOSE: fmt.Printf("%s: No migrations yet.\n", engine.Name)
 			return "0", true
 		}
 
-		log.Fatalf("%s: Error checking status. %v", engineName, err)
+		log.Fatalf("%s: Error checking status. %v", engine.Name, err)
 	}
 
 	return version.Version, true

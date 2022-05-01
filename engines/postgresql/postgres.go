@@ -16,8 +16,6 @@ type Postgres struct {
 	FilePattern *regexp.Regexp
 }
 
-const engineName string = "PostgreSQL"
-
 var pgInstance *pgxpool.Pool
 
 func (engine Postgres) acquireDatabaseConnection() {
