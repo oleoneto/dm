@@ -11,9 +11,16 @@ var (
 		Use:   "validate",
 		Short: "Validate configuration of migration files",
 		Run: func(cmd *cobra.Command, args []string) {
-			changes := migrator.Build(directory)
+			files := Engine.LoadFiles(directory, &FilePattern)
 
-			if migrator.Validate(changes) {
+			if len(files) == 0 {
+				fmt.Println("No migrations found.")
+				return
+			}
+
+			migrations := Engine.BuildMigrations(files)
+
+			if Engine.Validate(migrations) {
 				fmt.Println("Migrations are valid.")
 			}
 		},
