@@ -1,6 +1,16 @@
 # Database Migrator, DM
 A database migration tool.
 
+[![Build and Test](https://github.com/cleopatrio/db-migrator-lib/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/cleopatrio/db-migrator-lib/actions/workflows/go.yml)
+
+**Table of Contents**
+- [Commands](#commands)
+  - [dm](#dm)
+  - [Migrate](#migrate)
+  - [Rollback](#rollback)
+  - [Validate](#validate)
+  - [Show](#show)
+- [To Do](#to-do)
 
 ## Commands
 Assume the installed binary is called `dm`.
@@ -92,3 +102,6 @@ Available Commands:
   pending     List only pending migrations
   version     Shows the most recently applied migration
 ```
+
+## To Do
+[Check out open issues](https://github.com/cleopatrio/issues).
