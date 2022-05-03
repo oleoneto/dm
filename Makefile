@@ -15,7 +15,7 @@ build-deps:
 test: clean-test
 	go test -p 1 ./...
 
-build: build-deps
+build: build-deps test
 	@go build -o $(TARGET_FILE)
 
 install: build
