@@ -15,7 +15,7 @@ func (engine Postgres) Up(changes migrations.MigrationList) error {
 		return new(migrations.ValidationError)
 	}
 
-	engine.acquireDatabaseConnection()
+	engine.Connect()
 
 	if changes.Size() < 1 || engine.IsUpToDate(changes) {
 		fmt.Println("Migrations are up-to-date.")
@@ -48,7 +48,7 @@ func (engine Postgres) Down(changes migrations.MigrationList) error {
 		return new(migrations.ValidationError)
 	}
 
-	engine.acquireDatabaseConnection()
+	engine.Connect()
 
 	if engine.IsEmpty() {
 		fmt.Println("No migrations to rollback.")

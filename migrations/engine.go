@@ -6,10 +6,22 @@ import (
 )
 
 type Engine interface {
+	DatabaseConnector
 	FileLoader
 	MigrationRunner
 	Tracker
 	Validator
+}
+
+type DatabaseConnector interface {
+	// ConnectionPattern - A regular expression for what a connection string to this connector should look like.
+	ConnectionPattern() *regexp.Regexp
+
+	// Connect - Acquire a connection to the database.
+	Connect() error
+
+	// Disconnect - Releases all existing database connections.
+	Disconnect() error
 }
 
 type FileLoader interface {

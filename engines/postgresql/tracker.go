@@ -36,7 +36,7 @@ func (engine Postgres) IsUpToDate(changes migrations.MigrationList) bool {
 func (engine Postgres) Version() (string, bool) {
 	version := migrations.MigratorVersion{}
 
-	engine.acquireDatabaseConnection()
+	engine.Connect()
 
 	rows, _ := Pg().Query(
 		context.Background(),
@@ -113,7 +113,7 @@ func (engine Postgres) PendingMigrations() migrations.MigrationList {
 		return list
 	}
 
-	engine.acquireDatabaseConnection()
+	engine.Connect()
 
 	rows, _ := Pg().Query(context.Background(), fmt.Sprintf("SELECT id, name, version FROM %v;", engine.Table))
 	err := pgxscan.ScanAll(&migrated, rows)
@@ -159,7 +159,7 @@ func (engine Postgres) AppliedMigrations() migrations.MigrationList {
 		return migrations.MigrationList{}
 	}
 
-	engine.acquireDatabaseConnection()
+	engine.Connect()
 
 	rows, _ := Pg().Query(context.Background(), fmt.Sprintf("SELECT id, name, version FROM %v;", engine.Table))
 	err := pgxscan.ScanAll(&migrated, rows)
