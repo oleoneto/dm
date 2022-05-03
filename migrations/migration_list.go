@@ -40,6 +40,39 @@ func (List *MigrationList) Insert(node *Migration) {
 	List.size += 1
 }
 
+// Remove - Excludes a node from the list.
+func (List *MigrationList) Remove(identifier string) {
+	curr := List.head
+
+	if curr.Version == identifier || curr.Name == identifier {
+		List.head = curr.next
+		List.size -= 1
+		return
+	}
+
+	for curr != nil {
+		if curr.Version == identifier || curr.Name == identifier {
+
+			if curr.previous != nil {
+				curr.previous.next = nil
+			}
+
+			if curr.next != nil {
+				curr.previous.next = curr.next
+			}
+
+			if curr == List.tail {
+				List.tail = curr.previous
+			}
+
+			List.size -= 1
+			return
+		}
+
+		curr = curr.next
+	}
+}
+
 // Reverse - Traverses list and swaps the direction of the list.
 func (List *MigrationList) Reverse() {
 	var prev *Migration

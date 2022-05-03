@@ -67,6 +67,78 @@ func TestInsert(t *testing.T) {
 	}
 }
 
+func TestRemoveNonExistent(t *testing.T) {
+	list := defaultList()
+
+	list.Remove("CreateNonExistent")
+
+	if list.Size() != 3 {
+		t.Fatalf(`wanted list.Size() == 1, but got %v`, list.Size())
+	}
+
+	if list.GetHead().Name != "CreateUsers" {
+		t.Fatalf(`wanted list.GetHead().Name == "CreateUsers", got %v`, list.GetHead().Name)
+	}
+
+	if list.GetTail().Name != "CreateArticles" {
+		t.Fatalf(`wanted list.GetTail().Name == "CreateArticles", got %v`, list.GetTail().Name)
+	}
+}
+
+func TestRemoveHead(t *testing.T) {
+	list := defaultList()
+
+	list.Remove("CreateUsers")
+
+	if list.Size() != 2 {
+		t.Fatalf(`wanted list.Size() == 2, but got %v`, list.Size())
+	}
+
+	if list.GetHead().Name != "CreatePodcasts" {
+		t.Fatalf(`wanted list.GetTail().Name == "CreatePodcasts", got %v`, list.GetHead().Name)
+	}
+
+	if list.GetTail().Name != "CreateArticles" {
+		t.Fatalf(`wanted list.GetTail().Name == "CreateArticles", got %v`, list.GetTail().Name)
+	}
+}
+
+func TestRemoveTail(t *testing.T) {
+	list := defaultList()
+
+	list.Remove("CreateArticles")
+
+	if list.Size() != 2 {
+		t.Fatalf(`wanted list.Size() == 2, but got %v`, list.Size())
+	}
+
+	if list.GetTail().Name == "CreateArticles" {
+		t.Fatalf(`wanted list.GetTail().Name != "CreateArticles", got %v`, list.GetTail().Name)
+	}
+
+	if list.GetTail().Name != "CreatePodcasts" {
+		t.Fatalf(`wanted list.GetTail().Name == "CreatePodcasts", got %v`, list.GetTail().Name)
+	}
+}
+
+func TestRemoveMiddleNode(t *testing.T) {
+	list := defaultList()
+
+	list.Remove("CreatePodcasts")
+
+	if list.Size() != 2 {
+		t.Fatalf(`wanted list.Size() == 1, but got %v`, list.Size())
+	}
+
+	if list.GetHead().Name != "CreateUsers" {
+		t.Fatalf(`wanted list.GetHead().Name == "CreateUsers", got %v`, list.GetHead().Name)
+	}
+
+	if list.GetHead().next.Name != "CreateArticles" {
+		t.Fatalf(`wanted list.GetTail().Name == "CreateArticles", got %v`, list.GetHead().next.Name)
+	}
+}
+
 func TestGetTail(t *testing.T) {
 	list := MigrationList{}
 
