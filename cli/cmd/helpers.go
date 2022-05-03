@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 )
 
@@ -32,7 +31,6 @@ func parsedVersionFlag(flag string) (VersionFlag, error) {
 	}
 
 	fmt.Println("Error: invalid migration version or name")
-	os.Exit(1)
 
 	return parsedFlag, new(InvalidFlagError)
 }

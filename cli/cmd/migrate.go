@@ -23,6 +23,7 @@ var (
 
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
+					os.Exit(INVALID_INPUT_ERROR)
 				}
 			}
 
@@ -32,7 +33,8 @@ var (
 				sequence, found := list.Find(strcase.ToCamel(version.Value))
 
 				if !found {
-					return
+					fmt.Fprintln(os.Stderr, "Error: Migration not found.")
+					os.Exit(INVALID_INPUT_ERROR)
 				}
 
 				list = sequence
