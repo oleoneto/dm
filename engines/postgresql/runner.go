@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cleopatrio/db-migrator-lib/engines"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 )
 
@@ -104,7 +105,7 @@ func (engine Postgres) performRollback(migration migrations.Migration, callback 
 func (engine Postgres) registerMigration(migration migrations.Migration) error {
 	rows, _ := Pg().Query(
 		context.Background(),
-		fmt.Sprintf("INSERT INTO %v (version, name) VALUES ($1, $2);", engine.Table),
+		engines.CreateMigrationEntry(engine.Table),
 		migration.Version,
 		migration.Name,
 	)
@@ -122,7 +123,7 @@ func (engine Postgres) registerMigration(migration migrations.Migration) error {
 func (engine Postgres) deregisterMigration(migration migrations.Migration) error {
 	rows, _ := Pg().Query(
 		context.Background(),
-		fmt.Sprintf("DELETE FROM %v WHERE version = $1 AND name = $2;", engine.Table),
+		engines.DropMigrationTable(engine.Table),
 		migration.Version,
 		migration.Name,
 	)

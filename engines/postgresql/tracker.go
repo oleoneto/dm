@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cleopatrio/db-migrator-lib/engines"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -40,7 +41,7 @@ func (engine Postgres) Version() (string, bool) {
 
 	rows, _ := Pg().Query(
 		context.Background(),
-		fmt.Sprintf("SELECT id, name, version FROM %v ORDER BY version DESC LIMIT 1;", engine.Table),
+		engines.SelectMigrationsVersion(engine.Table),
 	)
 
 	err := pgxscan.ScanOne(&version, rows)
@@ -57,7 +58,7 @@ func (engine Postgres) Version() (string, bool) {
 		log.Fatalf("%s: Error checking status. %v", engine.Name, err)
 	}
 
-	return version.Version, true
+	return fmt.Sprintf("%v (%v).\nApplied at: %v", version.Version, version.Name, version.CreatedAt), true
 }
 
 func (engine Postgres) StartTracking() error {
@@ -67,14 +68,7 @@ func (engine Postgres) StartTracking() error {
 
 	rows, _ := Pg().Query(
 		context.Background(),
-		fmt.Sprintf(`CREATE TABLE %v (
-			id SERIAL,
-			version varchar UNIQUE NOT NULL,
-			name varchar UNIQUE NOT NULL,
-			created_at timestamp NOT NULL DEFAULT now(),
-
-			PRIMARY KEY(id)
-		);`, engine.Table),
+		engines.CreateMigrationTable(engine.Table),
 	)
 
 	return rows.Scan()
@@ -87,7 +81,7 @@ func (engine Postgres) StopTracking() error {
 
 	rows, _ := Pg().Query(
 		context.Background(),
-		fmt.Sprintf("DROP TABLE %v;", engine.Table),
+		engines.DropMigrationTable(engine.Table),
 	)
 
 	return rows.Scan()
@@ -115,7 +109,7 @@ func (engine Postgres) PendingMigrations() migrations.MigrationList {
 
 	engine.Connect()
 
-	rows, _ := Pg().Query(context.Background(), fmt.Sprintf("SELECT id, name, version FROM %v;", engine.Table))
+	rows, _ := Pg().Query(context.Background(), engines.SelectMigrations(engine.Table))
 	err := pgxscan.ScanAll(&migrated, rows)
 
 	if err != nil {
@@ -161,7 +155,7 @@ func (engine Postgres) AppliedMigrations() migrations.MigrationList {
 
 	engine.Connect()
 
-	rows, _ := Pg().Query(context.Background(), fmt.Sprintf("SELECT id, name, version FROM %v;", engine.Table))
+	rows, _ := Pg().Query(context.Background(), engines.SelectMigrations(engine.Table))
 	err := pgxscan.ScanAll(&migrated, rows)
 
 	if err != nil {
