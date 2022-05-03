@@ -8,9 +8,10 @@ import (
 )
 
 func (engine Postgres) Up(changes migrations.MigrationList) error {
-	valid, _ := engine.Validate(changes)
+	valid, reason := engine.Validate(changes)
 
 	if !valid {
+		fmt.Println(reason)
 		return new(migrations.ValidationError)
 	}
 
