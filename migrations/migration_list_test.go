@@ -235,7 +235,7 @@ func defaultList() MigrationList {
 
 func defaultMap() map[string]Migration {
 	hash := map[string]Migration{
-		"20221231054540": Migration{
+		"20221231054540": {
 			Version:  "20221231054540",
 			Engine:   "postgresql",
 			Name:     "CreateUsers",
@@ -245,7 +245,7 @@ func defaultMap() map[string]Migration {
 				Down: "DROP TABLE users;",
 			},
 		},
-		"20221231054541": Migration{
+		"20221231054541": {
 			Version:  "20221231054541",
 			Engine:   "postgresql",
 			Name:     "CreatePodcasts",
@@ -255,7 +255,7 @@ func defaultMap() map[string]Migration {
 				Down: "DROP TABLE podcasts;",
 			},
 		},
-		"20221231054542": Migration{
+		"20221231054542": {
 			Version:  "20221231054542",
 			Engine:   "postgresql",
 			Name:     "CreateArticles",
