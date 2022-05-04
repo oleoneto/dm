@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/spf13/cobra"
 )
 
@@ -11,15 +12,15 @@ var (
 		Use:   "validate",
 		Short: "Validate the configuration of migration files",
 		Run: func(cmd *cobra.Command, args []string) {
-			files := Engine.LoadFiles(directory, &FilePattern)
+			files := migrations.LoadFiles(directory, &FilePattern)
 
 			if len(files) == 0 {
 				fmt.Println("No migrations found.")
 				return
 			}
 
-			migrations := Engine.BuildMigrations(files)
-			valid, reason := Engine.Validate(migrations)
+			list := migrations.BuildMigrations(files, directory, &FilePattern)
+			valid, reason := migrations.Validate(list)
 
 			if valid && reason == "" {
 				fmt.Println("Migrations are valid.")

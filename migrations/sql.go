@@ -1,6 +1,22 @@
-package engines
+package migrations
 
 import "fmt"
+
+func SchemaTableExists(table string) string {
+	return fmt.Sprintf(`SELECT 
+		TABLE_SCHEMA, 
+		TABLE_NAME,
+		TABLE_TYPE
+		FROM 
+			information_schema.TABLES 
+		WHERE 
+			TABLE_TYPE LIKE 'BASE TABLE' AND
+			TABLE_NAME = '%v';`, table)
+}
+
+func NumberOfAppliedMigrations(table string) string {
+	return fmt.Sprintf(`SELECT COUNT(id) FROM %v;`, table)
+}
 
 func CreateMigrationTable(table string) string {
 	return fmt.Sprintf(`CREATE TABLE %v (

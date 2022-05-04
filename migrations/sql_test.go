@@ -1,10 +1,36 @@
-package engines
+package migrations
 
 import (
 	"testing"
 )
 
 var table = "schema_migrations"
+
+func TestSchemaTableExists(t *testing.T) {
+	query := SchemaTableExists(table)
+	formatted := `SELECT 
+		TABLE_SCHEMA, 
+		TABLE_NAME,
+		TABLE_TYPE
+		FROM 
+			information_schema.TABLES 
+		WHERE 
+			TABLE_TYPE LIKE 'BASE TABLE' AND
+			TABLE_NAME = 'schema_migrations';`
+
+	if query != formatted {
+		t.Fatalf(`got incorrect query %v`, query)
+	}
+}
+
+func TestNumberOfAppliedMigrations(t *testing.T) {
+	query := NumberOfAppliedMigrations(table)
+	formatted := `SELECT COUNT(id) FROM schema_migrations;`
+
+	if query != formatted {
+		t.Fatalf(`got incorrect query %v`, query)
+	}
+}
 
 func TestCreateMigrationTable(t *testing.T) {
 	query := CreateMigrationTable(table)

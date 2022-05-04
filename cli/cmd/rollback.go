@@ -12,8 +12,12 @@ var (
 	rollbackTo string
 
 	rollbackCmd = &cobra.Command{
-		Use:   "rollback",
-		Short: "Rollback migration(s)",
+		Use:     "rollback",
+		Short:   "Rollback migration(s)",
+		Aliases: []string{"r"},
+		PreRun: func(cmd *cobra.Command, args []string) {
+			validateDatabaseConfig()
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			var version VersionFlag
@@ -27,7 +31,7 @@ var (
 				}
 			}
 
-			list := Engine.AppliedMigrations()
+			list := runner.AppliedMigrations(directory, &FilePattern)
 			list.Reverse()
 
 			if version.Value != "" {
@@ -41,11 +45,15 @@ var (
 				list = sequence
 			}
 
-			Engine.Down(list)
+			runner.Down(list)
 		},
 	}
 )
 
 func init() {
-	rollbackCmd.PersistentFlags().StringVar(&rollbackTo, "version", "", "rollback this version (and anything applied after it)")
+	rollbackCmd.PersistentFlags().StringVarP(&rollbackTo, "version", "v", "", "rollback this version (and anything applied after it)")
+	rollbackCmd.PersistentFlags().StringVarP(&databaseUrl, "database-url", "u", databaseUrl, "database url")
+	rollbackCmd.MarkFlagRequired("database-url")
+	rollbackCmd.MarkFlagRequired("adapter")
+	rollbackCmd.MarkFlagRequired("table")
 }

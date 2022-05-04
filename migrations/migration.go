@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"path/filepath"
@@ -32,6 +33,16 @@ type MigratorVersion struct {
 	Name      string    `json:"name"`
 	Version   string    `json:"version"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
+}
+
+type TableSchema struct {
+	TableSchema string `json:"table_schema" db:"table_schema"`
+	TableName   string `json:"table_name" db:"table_name"`
+	TableType   string `json:"table_type" db:"table_type"`
+}
+
+func (M *Migration) Description() string {
+	return fmt.Sprintf("Version: %v (%v)", M.Version, M.Name)
 }
 
 // MARK: - Implements LinkedList behavior

@@ -30,6 +30,7 @@ func MatchingFiles(dir string, pattern *regexp.Regexp) ([]fs.FileInfo, error) {
 	return matches, nil
 }
 
+// BuildMigrations - Instantiate a list of migrations from the contents of the provided files. Accesses the filesystem.
 func BuildMigrations(files []fs.FileInfo, dir string, pattern *regexp.Regexp) MigrationList {
 	var changes MigrationList
 
@@ -56,6 +57,7 @@ func LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
 	return files
 }
 
+// Validate - Runs validations on a list of migrations.
 func Validate(changes MigrationList) (bool, string) {
 	visitedNames := map[string]bool{}
 	visitedVersions := map[string]bool{}

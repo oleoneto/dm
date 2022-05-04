@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/cleopatrio/db-migrator-lib/migrations"
+	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 )
 
@@ -10,17 +13,24 @@ var (
 	showCmd = &cobra.Command{
 		Use:   "show",
 		Short: "Shows the state of applied and pending migrations",
-		Run:   func(cmd *cobra.Command, args []string) {},
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			validateDatabaseConfig()
+		},
+		Run: func(cmd *cobra.Command, args []string) {},
 	}
 
 	allCmd = &cobra.Command{
 		Use:   "all",
 		Short: "List all migrations for a given application",
 		Run: func(cmd *cobra.Command, args []string) {
-			files := Engine.LoadFiles(directory, &FilePattern)
+			files := migrations.LoadFiles(directory, &FilePattern)
 
 			for _, file := range files {
-				fmt.Println(file.Name())
+				version, name, _ := strings.Cut(file.Name(), "_")
+				name = strings.Split(name, ".")[0]
+				name = strcase.ToCamel(name)
+
+				fmt.Printf("Version: %v (%v)\n", version, name)
 			}
 		},
 	}
@@ -29,27 +39,31 @@ var (
 		Use:   "applied",
 		Short: "List only applied migrations",
 		Run: func(cmd *cobra.Command, args []string) {
-			applied := Engine.AppliedMigrations()
+			applied := runner.AppliedMigrations(directory, &FilePattern)
 
 			migration := applied.GetHead()
 
 			for migration != nil {
-				fmt.Println(migration.FileName)
+				fmt.Println(migration.Description())
 				migration = migration.Next()
 			}
 		},
 	}
 
 	pendingCmd = &cobra.Command{
-		Use:   "pending",
-		Short: "List only pending migrations",
+		Use:     "pending",
+		Short:   "List only pending migrations",
+		Aliases: []string{"p"},
+		PreRun: func(cmd *cobra.Command, args []string) {
+			validateDatabaseConfig()
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			pending := Engine.PendingMigrations()
+			pending := runner.PendingMigrations(directory, &FilePattern)
 
 			migration := pending.GetHead()
 
 			for migration != nil {
-				fmt.Println(migration.FileName)
+				fmt.Println(migration.Description())
 				migration = migration.Next()
 			}
 		},
@@ -59,17 +73,20 @@ var (
 		Use:   "version",
 		Short: "Shows the most recently applied migration",
 		Run: func(cmd *cobra.Command, args []string) {
-			version, _ := Engine.Version()
+			version, _ := runner.Version()
 			fmt.Printf("Current version: %v\n", version)
 		},
 	}
 )
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	showCmd.AddCommand(allCmd)
 	showCmd.AddCommand(appliedCmd)
 	showCmd.AddCommand(pendingCmd)
 	showCmd.AddCommand(versionCmd)
+
+	showCmd.PersistentFlags().StringVarP(&databaseUrl, "database-url", "u", databaseUrl, "database url")
+	showCmd.MarkFlagRequired("database-url")
+	showCmd.MarkFlagRequired("adapter")
+	showCmd.MarkFlagRequired("table")
 }
