@@ -16,16 +16,18 @@ func (e InvalidFlagError) Error() string {
 	return "invalid flag value"
 }
 
+var (
+	NameValidationPattern    = regexp.MustCompile(`^[a-zA-Z]+(\_?[a-zA-Z])*$`)
+	VersionValidationPattern = regexp.MustCompile(`^\d{14}$`)
+)
+
 func parsedVersionFlag(flag string) (VersionFlag, error) {
 	parsedFlag := VersionFlag{Value: flag}
 
-	versionPattern := regexp.MustCompile(`^\d{14}$`)
-	namePattern := regexp.MustCompile(`^[aA-zZ]+_?[aA-zZ]+$`)
-
-	if namePattern.MatchString(flag) {
+	if NameValidationPattern.MatchString(flag) {
 		parsedFlag.Type = "Name"
 		return parsedFlag, nil
-	} else if versionPattern.MatchString(flag) {
+	} else if VersionValidationPattern.MatchString(flag) {
 		parsedFlag.Type = "Version"
 		return parsedFlag, nil
 	}

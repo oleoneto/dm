@@ -9,12 +9,11 @@ import (
 )
 
 var (
-	rollbackTo string
-
 	rollbackCmd = &cobra.Command{
-		Use:     "rollback",
+		Use:     "rollback NAME|VERSION",
 		Short:   "Rollback migration(s)",
 		Aliases: []string{"r"},
+		Args:    cobra.MaximumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			validateDatabaseConfig()
 		},
@@ -22,11 +21,10 @@ var (
 			var err error
 			var version VersionFlag
 
-			if rollbackTo != "" {
-				version, err = parsedVersionFlag(rollbackTo)
+			if args[0] != "" {
+				version, err = parsedVersionFlag(args[0])
 
 				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
 					os.Exit(INVALID_INPUT_ERROR)
 				}
 			}
@@ -51,7 +49,7 @@ var (
 )
 
 func init() {
-	rollbackCmd.PersistentFlags().StringVarP(&rollbackTo, "version", "v", "", "rollback this version (and anything applied after it)")
+	// rollbackCmd.PersistentFlags().StringVarP(&rollbackTo, "version", "v", "", "rollback this version (and anything applied after it)")
 	rollbackCmd.PersistentFlags().StringVarP(&databaseUrl, "database-url", "u", databaseUrl, "database url")
 	rollbackCmd.MarkFlagRequired("database-url")
 	rollbackCmd.MarkFlagRequired("adapter")

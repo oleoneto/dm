@@ -9,12 +9,11 @@ import (
 )
 
 var (
-	migrateTo string
-
 	migrateCmd = &cobra.Command{
-		Use:     "migrate",
+		Use:     "migrate NAME|VERSION",
 		Short:   "Run migration(s)",
 		Aliases: []string{"m"},
+		Args:    cobra.MaximumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			validateDatabaseConfig()
 		},
@@ -22,11 +21,10 @@ var (
 			var err error
 			var version VersionFlag
 
-			if migrateTo != "" {
-				version, err = parsedVersionFlag(migrateTo)
+			if args[0] != "" {
+				version, err = parsedVersionFlag(args[0])
 
 				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
 					os.Exit(INVALID_INPUT_ERROR)
 				}
 			}
@@ -50,7 +48,6 @@ var (
 )
 
 func init() {
-	migrateCmd.PersistentFlags().StringVarP(&migrateTo, "version", "v", "", "run migrations up do this version")
 	migrateCmd.PersistentFlags().StringVarP(&databaseUrl, "database-url", "u", databaseUrl, "database url")
 	migrateCmd.MarkFlagRequired("database-url")
 	migrateCmd.MarkFlagRequired("adapter")
