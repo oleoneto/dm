@@ -1,0 +1,8 @@
+schema: 1
+name: CreateExample
+engine: postgresql
+changes:
+  up: |
+    CREATE TABLE example (id SERIAL);
+  down: |
+    DROP TABLE example;
