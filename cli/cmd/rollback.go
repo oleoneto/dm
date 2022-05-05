@@ -21,7 +21,7 @@ var (
 			var err error
 			var version VersionFlag
 
-			if args[0] != "" {
+			if len(args) > 0 && args[0] != "" {
 				version, err = parsedVersionFlag(args[0])
 
 				if err != nil {
@@ -49,7 +49,6 @@ var (
 )
 
 func init() {
-	// rollbackCmd.PersistentFlags().StringVarP(&rollbackTo, "version", "v", "", "rollback this version (and anything applied after it)")
 	rollbackCmd.PersistentFlags().StringVarP(&databaseUrl, "database-url", "u", databaseUrl, "database url")
 	rollbackCmd.MarkFlagRequired("database-url")
 	rollbackCmd.MarkFlagRequired("adapter")
