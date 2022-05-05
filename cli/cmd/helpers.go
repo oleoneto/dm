@@ -18,7 +18,7 @@ func (e InvalidFlagError) Error() string {
 
 var (
 	NameValidationPattern    = regexp.MustCompile(`^[a-zA-Z]+(\_?[a-zA-Z])*$`)
-	VersionValidationPattern = regexp.MustCompile(`^\d{14}$`)
+	VersionValidationPattern = regexp.MustCompile(`^\d{20}$`)
 )
 
 func parsedVersionFlag(flag string) (VersionFlag, error) {

@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var FilePattern = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).ya?ml$`)
+
 /*
 Runner:
 	Responsible for running and reverting migrations.

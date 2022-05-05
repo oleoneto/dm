@@ -2,25 +2,20 @@ package migrations
 
 import (
 	"io/fs"
-	"regexp"
 	"testing"
 	"time"
 )
 
-var (
-	pattern = *regexp.MustCompile(`(?P<Version>^\d{14})_(?P<Name>[aA-zZ]+).ya?ml$`)
-
-	list = MigrationList{}
-)
+var list = MigrationList{}
 
 func defaultMigrationList() MigrationList {
 	res := MigrationList{}
 
 	res.Insert(&Migration{
-		Version:  "20221231054530",
+		Version:  "20221231054530129328",
 		Engine:   "postgresql",
 		Name:     "CreateUsers",
-		FileName: "20221231054530_create_users.yaml",
+		FileName: "20221231054530129328_create_users.yaml",
 		Changes: Changes{
 			Up:   "CREATE TABLE users (id SERIAL, username VARCHAR UNIQUE NOT NULL);",
 			Down: "DROP TABLE users;",
@@ -28,10 +23,10 @@ func defaultMigrationList() MigrationList {
 	})
 
 	res.Insert(&Migration{
-		Version:  "20221231054531",
+		Version:  "20221231054531293821",
 		Engine:   "postgresql",
 		Name:     "CreateArticles",
-		FileName: "20221231054531_create_articles.yaml",
+		FileName: "20221231054531293821_create_articles.yaml",
 		Changes: Changes{
 			Up:   "CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL);",
 			Down: "DROP TABLE articles;",
@@ -39,10 +34,10 @@ func defaultMigrationList() MigrationList {
 	})
 
 	res.Insert(&Migration{
-		Version:  "20221231054532",
+		Version:  "20221231054532123874",
 		Engine:   "postgresql",
 		Name:     "CreateComments",
-		FileName: "20221231054532_create_comments.yaml",
+		FileName: "20221231054532123874_create_comments.yaml",
 		Changes: Changes{
 			Up:   "CREATE TABLE comments (id SERIAL, content TEXT NOT NULL);",
 			Down: "DROP TABLE comments;",
@@ -54,9 +49,9 @@ func defaultMigrationList() MigrationList {
 
 func defaultMigrationFiles() []fs.FileInfo {
 	res := []fs.FileInfo{
-		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220420120000_create_users.yml"},
-		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220421010000_create_articles.yml"},
-		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220423010000_create_comments.yaml"},
+		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202422742293_create_users.yml"},
+		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202443251494_create_articles.yml"},
+		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202502049236_create_comments.yaml"},
 	}
 
 	return res
@@ -86,10 +81,10 @@ func TestValidateDuplicateVersion(t *testing.T) {
 
 	// Duplicate Version
 	list.Insert(&Migration{
-		Version:  "20221231054532",
+		Version:  "20221231054532123874",
 		Engine:   "postgresql",
 		Name:     "CreateLikes",
-		FileName: "20221231054532_create_likes.yaml",
+		FileName: "20221231054532123874_create_likes.yaml",
 		Changes: Changes{
 			Up:   "CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);",
 			Down: "DROP TABLE likes;",
@@ -215,7 +210,7 @@ func TestValidateInvalidDownChange(t *testing.T) {
 
 // MARK: File Matcher
 func TestMatchingFilesEmpty(t *testing.T) {
-	matchedFiles, _ := MatchingFiles("./empty_dir", &pattern)
+	matchedFiles, _ := MatchingFiles("./empty_dir", &FilePattern)
 
 	if len(matchedFiles) != 0 {
 		t.Fatalf(`want len(matches) == 0, but got %v`, len(matchedFiles))
@@ -223,7 +218,7 @@ func TestMatchingFilesEmpty(t *testing.T) {
 }
 
 func TestMatchingFiles(t *testing.T) {
-	matchedFiles, _ := MatchingFiles("../examples", &pattern)
+	matchedFiles, _ := MatchingFiles("../examples", &FilePattern)
 
 	if len(matchedFiles) != 3 {
 		t.Fatalf(`want len(matches) == 3, but got %v`, len(matchedFiles))
@@ -233,7 +228,7 @@ func TestMatchingFiles(t *testing.T) {
 // MARK: Migration Builder
 
 func TestBuildMigrationsEmpty(t *testing.T) {
-	list = BuildMigrations([]fs.FileInfo{}, "migrations", &pattern)
+	list = BuildMigrations([]fs.FileInfo{}, "migrations", &FilePattern)
 
 	if list.Size() != 0 {
 		t.Fatalf(`want size == 0, but got %v`, list.Size())
@@ -241,7 +236,7 @@ func TestBuildMigrationsEmpty(t *testing.T) {
 }
 
 func TestBuildMigrationsInEmptyDirectory(t *testing.T) {
-	list = BuildMigrations(defaultMigrationFiles(), "./empty_dir", &pattern)
+	list = BuildMigrations(defaultMigrationFiles(), "./empty_dir", &FilePattern)
 
 	if list.Size() != 0 {
 		t.Fatalf(`want size == 0, but got %v`, list.Size())
@@ -249,7 +244,7 @@ func TestBuildMigrationsInEmptyDirectory(t *testing.T) {
 }
 
 func TestBuildMigrations(t *testing.T) {
-	list = BuildMigrations(defaultMigrationFiles(), "../examples", &pattern)
+	list = BuildMigrations(defaultMigrationFiles(), "../examples", &FilePattern)
 
 	if list.Size() != 3 {
 		t.Fatalf(`want size == 3, but got %v`, list.Size())

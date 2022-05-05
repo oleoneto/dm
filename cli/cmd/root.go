@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"regexp"
 
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/cleopatrio/db-migrator-lib/stores"
@@ -18,7 +17,7 @@ var (
 	adapter      = "postgresql"
 	databaseUrl  = os.Getenv("DATABASE_URL")
 	table        = "_migrations"
-	FilePattern  = *regexp.MustCompile(`(?P<Version>^\d{14})_(?P<Name>[aA-zZ]+).ya?ml$`)
+	FilePattern  = migrations.FilePattern
 
 	SUPPORTED_ADAPTERS = map[string]migrations.Store{
 		"postgresql": stores.Postgres{URL: databaseUrl},
