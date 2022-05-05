@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var FilePattern = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).ya?ml$`)
+var FilePattern = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).yaml$`)
 
 /*
 Runner:

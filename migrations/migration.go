@@ -11,6 +11,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type MigrationFile struct {
+	name    string
+	size    int64
+	mode    fs.FileMode
+	modTime time.Time
+	isDir   bool
+	sys     any
+}
+
 type Migration struct {
 	Id       int     `yaml:"-"`
 	FileName string  `yaml:"-"`
@@ -103,4 +112,30 @@ func (instance *Migration) Load(file fs.FileInfo, parent string, pattern *regexp
 	instance.Version = match[pattern.SubexpIndex("Version")]
 
 	return nil
+}
+
+// MARK: - Migration file (implements the fs.FileInfo interface)
+
+func (f MigrationFile) Name() string {
+	return f.name
+}
+
+func (f MigrationFile) Size() int64 {
+	return f.size
+}
+
+func (f MigrationFile) Mode() fs.FileMode {
+	return f.mode
+}
+
+func (f MigrationFile) ModTime() time.Time {
+	return f.modTime
+}
+
+func (f MigrationFile) IsDir() bool {
+	return f.isDir
+}
+
+func (f MigrationFile) Sys() any {
+	return f.sys
 }

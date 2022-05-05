@@ -49,9 +49,9 @@ func defaultMigrationList() MigrationList {
 
 func defaultMigrationFiles() []fs.FileInfo {
 	res := []fs.FileInfo{
-		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202422742293_create_users.yml"},
-		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202443251494_create_articles.yml"},
-		MockFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202502049236_create_comments.yaml"},
+		MigrationFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202422742293_create_users.yaml"},
+		MigrationFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202443251494_create_articles.yaml"},
+		MigrationFile{size: 1024, modTime: time.Now(), isDir: false, name: "20220504202502049236_create_comments.yaml"},
 	}
 
 	return res
@@ -249,39 +249,4 @@ func TestBuildMigrations(t *testing.T) {
 	if list.Size() != 3 {
 		t.Fatalf(`want size == 3, but got %v`, list.Size())
 	}
-}
-
-// MARK: - Supporting Definitions for Testing
-
-type MockFile struct {
-	name    string
-	size    int64
-	mode    fs.FileMode
-	modTime time.Time
-	isDir   bool
-	sys     any
-}
-
-func (f MockFile) Name() string {
-	return f.name
-}
-
-func (f MockFile) Size() int64 {
-	return f.size
-}
-
-func (f MockFile) Mode() fs.FileMode {
-	return f.mode
-}
-
-func (f MockFile) ModTime() time.Time {
-	return f.modTime
-}
-
-func (f MockFile) IsDir() bool {
-	return f.isDir
-}
-
-func (f MockFile) Sys() any {
-	return f.sys
 }
