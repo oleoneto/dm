@@ -64,6 +64,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&table, "table", "t", table, "table wherein migrations are tracked")
 
 	// Sub-commands
+	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(migrateCmd)
 	rootCmd.AddCommand(rollbackCmd)
 	rootCmd.AddCommand(showCmd)

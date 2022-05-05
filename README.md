@@ -4,19 +4,23 @@ A database migration tool.
 [![Build and Test](https://github.com/cleopatrio/db-migrator-lib/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/cleopatrio/db-migrator-lib/actions/workflows/go.yml)
 
 **Table of Contents**
-- [Commands](#commands)
-  - [dm](#dm)
-  - [Migrate](#migrate)
-  - [Rollback](#rollback)
-  - [Validate](#validate)
-  - [Show](#show)
-- [To Do](#to-do)
+- [Database Migrator, DM](#database-migrator-dm)
+  - [Commands](#commands)
+    - [dm](#dm)
+    - [Migrate](#migrate)
+    - [Rollback](#rollback)
+    - [Generate](#generate)
+    - [Validate](#validate)
+    - [Show](#show)
+  - [To Do](#to-do)
 
 ## Commands
 Assume the installed binary is called `dm`.
 
 ### dm
 ```
+DM, short for Database Migrator is a migration management tool.
+
 Usage:
   dm [flags]
   dm [command]
@@ -27,15 +31,14 @@ Available Commands:
   migrate     Run migration(s)
   rollback    Rollback migration(s)
   show        Shows the state of applied and pending migrations
-  validate    Validate configuration of migration files
+  validate    Validate the configuration of migration files
 
 Flags:
-      --config string         config file
-      --database-url string   database url (default "postgres://***:****@***:5432/****")
-      --directory string      migrations directory (default "./migrations")
-      --engine string         database engine (default "postgresql")
-  -h, --help                  help for dm
-      --table string          table wherein migrations are tracked (default "_migrations")
+  -a, --adapter string     database adapter (default "postgresql")
+      --config string      config file
+  -d, --directory string   migrations directory (default "./migrations")
+  -h, --help               help for dm
+  -t, --table string       table wherein migrations are tracked (default "_migrations")
 
 Use "dm [command] --help" for more information about a command.
 ```
@@ -47,13 +50,18 @@ Use "dm [command] --help" for more information about a command.
 Run migration(s)
 
 Usage:
-  dm migrate [flags]
+  dm migrate NAME|VERSION [flags]
+
+Aliases:
+  migrate, m
 
 Flags:
-  -h, --help             help for migrate
-      --version string   run migrations up do this version
+  -u, --database-url string   database url (default "postgres://****:**@**:5432/******")
+  -h, --help                  help for migrate
 ```
-Since both the version and the name of a migration are validated for uniqueness, the `version` flag can take either value. So, both `20220422101345` and `create_user` are valid arguments for the flag.
+When an argument for NAME|VERSION is provided, the command will execute this migration and everything that comes before it. This is done to ensure schema consistency.
+
+Since both the version and the name of a migration are validated for uniqueness, the command can take a single argument for either value. In other words, both `20220422101345` and `create_user` are valid arguments.
 
 Note that this and other commands can load migrations from anywhere in your file system. Just point the `--directory` flag to where your files are.
 
@@ -64,12 +72,42 @@ Note that this and other commands can load migrations from anywhere in your file
 Rollback migration(s)
 
 Usage:
-  dm rollback [flags]
+  dm rollback NAME|VERSION [flags]
+
+Aliases:
+  rollback, r
 
 Flags:
+  -u, --database-url string   database url (default "postgres://****:**@**:5432/******")
   -h, --help             help for rollback
-      --version string   rollback this version (and everything applied after it)
 ```
+
+When an argument for NAME|VERSION is provided, the command will remove this migration and everything applied after it
+This is done to ensure schema consistency.
+
+Since both the version and the name of a migration are validated for uniqueness, the command can take a single argument for either value. In other words, both `20220422101345` and `create_user` are valid arguments.
+
+---
+
+### Generate
+```
+Generate a database migration file
+
+Usage:
+  dm generate NAME [flags]
+
+Aliases:
+  generate, g
+
+Flags:
+  -h, --help   help for generate
+
+Global Flags:
+  -d, --directory string   migrations directory (default "./migrations")
+```
+
+If the provided migration name passes validation, this command will create a migration file and save it in the migrations directory.
+The file will be created using the schema in use by the running version of the CLI. Check the [examples directory](examples) for examples schemas.
 
 ---
 
@@ -104,4 +142,4 @@ Available Commands:
 ```
 
 ## To Do
-[Check out open issues](https://github.com/cleopatrio/issues).
+[Check out open issues](https://github.com/cleopatrio/db-migration-lib/issues).

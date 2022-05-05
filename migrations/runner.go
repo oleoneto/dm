@@ -2,9 +2,14 @@ package migrations
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/iancoleman/strcase"
+	"gopkg.in/yaml.v2"
 )
 
 var FilePattern = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).ya?ml$`)
@@ -141,6 +146,49 @@ func StopTracking(store Store, schemaTable string) error {
 }
 
 // MARK: - Migration Runner
+
+func (runner *Runner) Generate(name string, directory string) Migration {
+	var migration Migration
+
+	exclusionPattern := regexp.MustCompile(`(\-?\d{4} \-?\d{2} m=\+\d{1}.\d{9})|(\-)|(\W+)|(\:)|(\.)`)
+
+	/*
+		Input : 2022-05-04 18:49:19.478478 -0400 -04 m=+0.001942418
+		Output: 20220504184919478478 (20 characters in total)
+
+	*/
+	now := time.Now().String()
+	timestamp := exclusionPattern.ReplaceAllLiteralString(now, ``)
+
+	// BUG: Regex needs updating. Timestamp sometimes returns < 20 characters.
+	// FIX: Use a constant for this value instead.
+	for len(timestamp) < 20 {
+		now = time.Now().String()
+		timestamp = exclusionPattern.ReplaceAllLiteralString(now, ``)
+	}
+
+	migration.Schema = 1
+	migration.Engine = strings.ToLower(runner.store.Name())
+	migration.Changes.Up = ""
+	migration.Changes.Down = ""
+	migration.Name = name
+	migration.Version = timestamp
+	migration.FileName = fmt.Sprintf("%v_%v.yaml", timestamp, strcase.ToSnake(name))
+
+	content, err := yaml.Marshal(&migration)
+
+	if err != nil {
+		fmt.Printf("Error while marshaling. %v\n", err)
+	}
+
+	err = ioutil.WriteFile(fmt.Sprintf("%v/%v", directory, migration.FileName), content, 0644)
+
+	if err != nil {
+		fmt.Printf("Error while writing to file %v\n", err)
+	}
+
+	return migration
+}
 
 func (runner *Runner) Up(migrations MigrationList) error {
 	runner.beforeAction()

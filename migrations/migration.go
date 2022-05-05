@@ -12,9 +12,9 @@ import (
 )
 
 type Migration struct {
-	Id       int
-	FileName string
-	Version  string
+	Id       int     `yaml:"-"`
+	FileName string  `yaml:"-"`
+	Version  string  `yaml:"-"`
 	Schema   int     `yaml:"schema"`
 	Name     string  `yaml:"name"`
 	Engine   string  `yaml:"engine"`
