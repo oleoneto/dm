@@ -142,4 +142,4 @@ Available Commands:
 ```
 
 ## To Do
-[Check out open issues](https://github.com/cleopatrio/db-migration-lib/issues).
+[Check out open issues](https://github.com/cleopatrio/db-migrator-lib/issues).
