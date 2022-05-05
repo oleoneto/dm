@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	fmt.Println("Database Migrator v0.1.0-alpha")
+	fmt.Printf("Database Migrator %v\n", version)
 }
 
 func main() {
