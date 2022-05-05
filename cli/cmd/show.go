@@ -39,7 +39,12 @@ var (
 		Use:   "applied",
 		Short: "List only applied migrations",
 		Run: func(cmd *cobra.Command, args []string) {
-			applied := runner.AppliedMigrations(directory, &FilePattern)
+			loadFromDir := false
+			applied := runner.AppliedMigrations(directory, &FilePattern, loadFromDir)
+
+			if applied.Size() == 0 {
+				fmt.Println("No applied migrations.")
+			}
 
 			migration := applied.GetHead()
 

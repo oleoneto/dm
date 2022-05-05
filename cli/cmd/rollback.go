@@ -29,7 +29,14 @@ var (
 				}
 			}
 
-			list := runner.AppliedMigrations(directory, &FilePattern)
+			loadFromDir := true
+			list := runner.AppliedMigrations(directory, &FilePattern, loadFromDir)
+
+			if list.Size() == 0 {
+				fmt.Println("No applied migrations to rollback.")
+				return
+			}
+
 			list.Reverse()
 
 			if version.Value != "" {

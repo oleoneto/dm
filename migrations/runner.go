@@ -307,7 +307,7 @@ func (runner *Runner) PendingMigrations(directory string, filePattern *regexp.Re
 	return res
 }
 
-func (runner *Runner) AppliedMigrations(directory string, filePattern *regexp.Regexp) MigrationList {
+func (runner *Runner) AppliedMigrations(directory string, filePattern *regexp.Regexp, loadFromDir bool) MigrationList {
 	runner.beforeAction()
 
 	migrated := Migrations{}
@@ -325,12 +325,21 @@ func (runner *Runner) AppliedMigrations(directory string, filePattern *regexp.Re
 	}
 
 	for _, curr := range migrated {
-		res.Insert(&Migration{
-			Engine:  runner.store.Name(),
-			Id:      curr.Id,
-			Name:    curr.Name,
-			Version: curr.Version,
-		})
+		m := Migration{
+			Engine:   runner.store.Name(),
+			Id:       curr.Id,
+			Name:     curr.Name,
+			Version:  curr.Version,
+			FileName: fmt.Sprintf(`%v_%v.yaml`, curr.Version, strcase.ToSnake(curr.Name)),
+		}
+
+		// NOTE: Create a representation of the underlying file and
+		// use it to load the file stored on the disk
+		if loadFromDir {
+			m.Load(MigrationFile{name: m.FileName}, directory, filePattern)
+		}
+
+		res.Insert(&m)
 	}
 
 	return res
