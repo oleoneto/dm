@@ -1,5 +1,7 @@
 package migrations
 
+import "fmt"
+
 type DatabaseConnector interface {
 	// Connect - Acquire a connection to the database.
 	Connect() error
@@ -26,21 +28,18 @@ type Store interface {
 
 // MARK: - Example Store
 
-type ExampleStore struct {
-	storage map[string]interface{}
-}
+type ExampleStore struct{}
 
 func (s ExampleStore) Create(query string, options ...interface{}) error {
-	s.storage[query] = options
 	return nil
 }
 
-func (s ExampleStore) Read(query string, model interface{}, options ...interface{}) interface{} {
-	return s.storage[query]
+func (s ExampleStore) Read(string, interface{}, ...interface{}) error {
+	fmt.Println("Read from ExampleStore")
+	return nil
 }
 
 func (s ExampleStore) Delete(query string, options ...interface{}) error {
-	delete(s.storage, query)
 	return nil
 }
 
@@ -50,4 +49,12 @@ func (s ExampleStore) Connect(string) error {
 
 func (s ExampleStore) Disconnect(string) error {
 	return nil
+}
+
+func (s ExampleStore) DatabaseURL() string {
+	return "example://database.dev"
+}
+
+func (s ExampleStore) Name() string {
+	return "Example"
 }

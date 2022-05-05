@@ -48,18 +48,20 @@ func (runner *Runner) GetStore() Store {
 
 // MARK: Migration Tracker
 
+// MARK: - Returns `true` if the schemaTable is found in the database. Returns `false` in any other case.
 func IsTracked(store Store, schemaTable string) bool {
 	var schema []TableSchema
 
 	err := store.Read(SchemaTableExists(schemaTable), &schema)
 
-	if err != nil {
+	if err != nil || len(schema) == 0 {
 		return false
 	}
 
 	return schema[0].TableName != ""
 }
 
+// MARK: - Return `true` if the schemaTable is found and has no rows.
 func IsEmpty(store Store, schemaTable string) bool {
 	var count int
 
@@ -82,7 +84,11 @@ func IsUpToDate(store Store, schemaTable string, migrations MigrationList) bool 
 	tracked := IsTracked(store, schemaTable)
 
 	if !tracked {
-		StartTracking(store, schemaTable)
+		tracking := StartTracking(store, schemaTable)
+
+		if !tracking {
+			return false
+		}
 	}
 
 	recent := migrations.GetTail()
@@ -97,52 +103,38 @@ func Version(store Store, schemaTable string) (string, bool) {
 
 	err := store.Read(SchemaTableExists(schemaTable), &schema)
 
-	if err != nil || schema[0].TableName == "" {
+	if err != nil || len(schema) == 0 || schema[0].TableName == "" {
 		return "0", false
 	}
 
 	err = store.Read(SelectMigrationsVersion(schemaTable), &versions)
 
-	// TODO: Fix generic type
-	// err := adapter.ScanOne(&version)
-	// fmt.Println("Here")
-	// fmt.Println(err)
-
 	if err != nil {
-		if strings.Contains(err.Error(), "does not exist") {
-			return "0", false
-		} else if strings.Contains(err.Error(), "no rows") {
-			return "0", true
-		}
-
 		fmt.Printf("%v\n", err)
+		return "0", false
+	}
+
+	if len(versions) == 0 {
+		return "0", true
 	}
 
 	return fmt.Sprintf("%v (%v).\nApplied at: %v", versions[0].Version, versions[0].Name, versions[0].CreatedAt), true
 }
 
-func StartTracking(store Store, schemaTable string) error {
+func StartTracking(store Store, schemaTable string) bool {
 	err := store.Create(CreateMigrationTable(schemaTable))
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err != nil
 }
 
-func StopTracking(store Store, schemaTable string) error {
+func StopTracking(store Store, schemaTable string) bool {
 	if !IsTracked(store, schemaTable) {
-		return nil
+		return true
 	}
 
 	err := store.Delete(DropMigrationTable(schemaTable))
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err != nil
 }
 
 // MARK: - Migration Runner
@@ -218,7 +210,7 @@ func (runner *Runner) Up(migrations MigrationList) error {
 		if err != nil {
 			fmt.Printf("\nMigration '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err)
 
-			_ = runner.undoMigration(*migration, runner.schemaTable)
+			_ = runner.removeMigrationFromSchema(*migration, runner.schemaTable)
 			return err
 		}
 
@@ -233,9 +225,10 @@ func (runner *Runner) Up(migrations MigrationList) error {
 func (runner *Runner) Down(migrations MigrationList) error {
 	runner.beforeAction()
 
-	valid, _ := Validate(migrations)
+	valid, reason := Validate(migrations)
 
 	if !valid {
+		fmt.Println(reason)
 		return new(ValidationError)
 	}
 
@@ -247,14 +240,19 @@ func (runner *Runner) Down(migrations MigrationList) error {
 	migration := migrations.GetHead()
 
 	for migration != nil {
-		err := runner.performRollback(*migration)
+		// Perform the migration's rollback instruction (down)
+		err := runner.store.Delete(migration.Changes.Down)
 
 		if err != nil {
 			fmt.Printf("\nRollback '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err)
 			return err
 		}
 
-		runner.undoMigration(*migration, runner.schemaTable)
+		err = runner.removeMigrationFromSchema(*migration, runner.schemaTable)
+
+		if err != nil {
+			return err
+		}
 
 		migration = migration.Next()
 	}
@@ -374,16 +372,6 @@ func (runner *Runner) performMigration(migration Migration) error {
 	return nil
 }
 
-func (runner *Runner) performRollback(migration Migration) error {
-	err := runner.store.Delete(migration.Changes.Down)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (runner *Runner) registerMigration(migration Migration, table string) error {
 	err := runner.store.Create(
 		CreateMigrationEntry(table),
@@ -399,9 +387,9 @@ func (runner *Runner) registerMigration(migration Migration, table string) error
 	return nil
 }
 
-func (runner *Runner) undoMigration(migration Migration, table string) error {
+func (runner *Runner) removeMigrationFromSchema(migration Migration, table string) error {
 	err := runner.store.Delete(
-		DropMigrationTable(table),
+		DeleteMigrationEntry(table),
 		migration.Version,
 		migration.Name,
 	)

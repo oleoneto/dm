@@ -32,7 +32,7 @@ func MatchingFiles(dir string, pattern *regexp.Regexp) ([]fs.FileInfo, error) {
 
 // BuildMigrations - Instantiate a list of migrations from the contents of the provided files. Accesses the filesystem.
 func BuildMigrations(files []fs.FileInfo, dir string, pattern *regexp.Regexp) MigrationList {
-	var changes MigrationList
+	var migrations MigrationList
 
 	for _, file := range files {
 		var mg Migration
@@ -40,11 +40,11 @@ func BuildMigrations(files []fs.FileInfo, dir string, pattern *regexp.Regexp) Mi
 		err := mg.Load(file, dir, pattern)
 
 		if err == nil {
-			changes.Insert(&mg)
+			migrations.Insert(&mg)
 		}
 	}
 
-	return changes
+	return migrations
 }
 
 func LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
@@ -58,59 +58,59 @@ func LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
 }
 
 // Validate - Runs validations on a list of migrations.
-func Validate(changes MigrationList) (bool, string) {
+func Validate(migrations MigrationList) (bool, string) {
 	visitedNames := map[string]bool{}
 	visitedVersions := map[string]bool{}
 
-	change := changes.head
+	migration := migrations.head
 
-	for change != nil {
-		if visitedVersions[change.Version] {
-			return invalidChange(*change, "duplicate migration version")
+	for migration != nil {
+		if visitedVersions[migration.Version] {
+			return invalidMigration(*migration, "duplicate migration version")
 		}
 
-		if visitedNames[change.Name] {
-			return invalidChange(*change, "duplicate migration name")
+		if visitedNames[migration.Name] {
+			return invalidMigration(*migration, "duplicate migration name")
 		}
 
 		// TODO: Check if migration is using a supported engine
-		// if !supportedEngines[change.Engine] {
-		// 	return invalidChange(change, "unsupported database engine")
+		// if !supportedEngines[migration.Engine] {
+		// 	return invalidMigration(migration, "unsupported database engine")
 		// }
 
-		if change.Engine == "" {
-			return invalidChange(*change, "missing engine")
+		if migration.Engine == "" {
+			return invalidMigration(*migration, "missing engine")
 		}
 
-		if len(strings.Split(change.Changes.Up, " ")) < 5 {
-			return invalidChange(*change, "missing (or invalid) migrate instruction")
+		if len(strings.Split(migration.Changes.Up, " ")) < 5 {
+			return invalidMigration(*migration, "missing (or invalid) migrate instruction")
 		}
 
-		if len(strings.Split(change.Changes.Down, " ")) < 3 {
-			return invalidChange(*change, "missing (or invalid) rollback instruction")
+		if len(strings.Split(migration.Changes.Down, " ")) < 3 {
+			return invalidMigration(*migration, "missing (or invalid) rollback instruction")
 		}
 
-		version, name, _ := strings.Cut(change.FileName, "_")
+		version, name, _ := strings.Cut(migration.FileName, "_")
 		name = strings.Split(name, ".")[0]
 		name = strcase.ToCamel(name)
 
-		if change.Version != version {
-			return invalidChange(*change, "version mismatch")
+		if migration.Version != version {
+			return invalidMigration(*migration, "version mismatch")
 		}
 
-		if change.Name != name {
-			return invalidChange(*change, "name mismatch")
+		if migration.Name != name {
+			return invalidMigration(*migration, "name mismatch")
 		}
 
-		visitedNames[change.Name] = true
-		visitedVersions[change.Version] = true
+		visitedNames[migration.Name] = true
+		visitedVersions[migration.Version] = true
 
-		change = change.next
+		migration = migration.next
 	}
 
 	return true, ""
 }
 
-func invalidChange(change Migration, reason string) (bool, string) {
-	return false, fmt.Sprintf("Invalid migration: %v.\nReason: %v.\n", change.FileName, reason)
+func invalidMigration(migration Migration, reason string) (bool, string) {
+	return false, fmt.Sprintf("Invalid migration: %v.\nReason: %v.\n", migration.Description(), reason)
 }
