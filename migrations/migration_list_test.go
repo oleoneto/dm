@@ -15,8 +15,8 @@ func TestGetHead(t *testing.T) {
 		Name:     "CreateUsers",
 		FileName: "20221231054540_create_users.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE users (id SERIAL)",
-			Down: "DROP TABLE users;",
+			Up:   []string{"CREATE TABLE users (id SERIAL)"},
+			Down: []string{"DROP TABLE users;"},
 		},
 	}
 
@@ -38,8 +38,8 @@ func TestInsert(t *testing.T) {
 		Name:     "CreateUsers",
 		FileName: "20221231054540_create_users.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE users (id SERIAL)",
-			Down: "DROP TABLE users;",
+			Up:   []string{"CREATE TABLE users (id SERIAL)"},
+			Down: []string{"DROP TABLE users;"},
 		},
 	})
 
@@ -49,8 +49,8 @@ func TestInsert(t *testing.T) {
 		Name:     "CreateArticles",
 		FileName: "20221231054542_create_articles.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL)",
-			Down: "DROP TABLE articles;",
+			Up:   []string{"CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL)"},
+			Down: []string{"DROP TABLE articles;"},
 		},
 	})
 
@@ -152,8 +152,8 @@ func TestGetTail(t *testing.T) {
 		Name:     "CreateUsers",
 		FileName: "20221231054540_create_users.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE users (id SERIAL)",
-			Down: "DROP TABLE users;",
+			Up:   []string{"CREATE TABLE users (id SERIAL)"},
+			Down: []string{"DROP TABLE users;"},
 		},
 	})
 
@@ -183,8 +183,8 @@ func TestSize(t *testing.T) {
 		Name:     "CreateUsers",
 		FileName: "20221231054540_create_users.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE users (id SERIAL)",
-			Down: "DROP TABLE users;",
+			Up:   []string{"CREATE TABLE users (id SERIAL)"},
+			Down: []string{"DROP TABLE users;"},
 		},
 	})
 
@@ -275,8 +275,8 @@ func defaultList() MigrationList {
 		Name:     "CreateUsers",
 		FileName: "20221231054540_create_users.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE users (id SERIAL)",
-			Down: "DROP TABLE users;",
+			Up:   []string{"CREATE TABLE users (id SERIAL)"},
+			Down: []string{"DROP TABLE users;"},
 		},
 	})
 
@@ -286,8 +286,8 @@ func defaultList() MigrationList {
 		Name:     "CreatePodcasts",
 		FileName: "20221231054541_create_podcasts.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE podcasts (id SERIAL, title VARCHAR NOT NULL)",
-			Down: "DROP TABLE podcasts;",
+			Up:   []string{"CREATE TABLE podcasts (id SERIAL, title VARCHAR NOT NULL)"},
+			Down: []string{"DROP TABLE podcasts;"},
 		},
 	})
 
@@ -297,8 +297,8 @@ func defaultList() MigrationList {
 		Name:     "CreateArticles",
 		FileName: "20221231054542_create_articles.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL)",
-			Down: "DROP TABLE articles;",
+			Up:   []string{"CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL)"},
+			Down: []string{"DROP TABLE articles;"},
 		},
 	})
 
@@ -313,8 +313,8 @@ func defaultMap() map[string]Migration {
 			Name:     "CreateUsers",
 			FileName: "20221231054540_create_users.yaml",
 			Changes: Changes{
-				Up:   "CREATE TABLE users (id SERIAL)",
-				Down: "DROP TABLE users;",
+				Up:   []string{"CREATE TABLE users (id SERIAL)"},
+				Down: []string{"DROP TABLE users;"},
 			},
 		},
 		"20221231054541": {
@@ -323,8 +323,8 @@ func defaultMap() map[string]Migration {
 			Name:     "CreatePodcasts",
 			FileName: "20221231054541_create_podcasts.yaml",
 			Changes: Changes{
-				Up:   "CREATE TABLE podcasts (id SERIAL, title VARCHAR NOT NULL)",
-				Down: "DROP TABLE podcasts;",
+				Up:   []string{"CREATE TABLE podcasts (id SERIAL, title VARCHAR NOT NULL)"},
+				Down: []string{"DROP TABLE podcasts;"},
 			},
 		},
 		"20221231054542": {
@@ -333,8 +333,8 @@ func defaultMap() map[string]Migration {
 			Name:     "CreateArticles",
 			FileName: "20221231054542_create_articles.yaml",
 			Changes: Changes{
-				Up:   "CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL)",
-				Down: "DROP TABLE articles;",
+				Up:   []string{"CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL)"},
+				Down: []string{"DROP TABLE articles;"},
 			},
 		},
 	}

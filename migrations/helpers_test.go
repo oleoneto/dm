@@ -17,8 +17,8 @@ func defaultMigrationList() MigrationList {
 		Name:     "CreateUsers",
 		FileName: "20221231054530129328_create_users.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE users (id SERIAL, username VARCHAR UNIQUE NOT NULL);",
-			Down: "DROP TABLE users;",
+			Up:   []string{"CREATE TABLE users (id SERIAL, username VARCHAR UNIQUE NOT NULL);"},
+			Down: []string{"DROP TABLE users;"},
 		},
 	})
 
@@ -28,8 +28,8 @@ func defaultMigrationList() MigrationList {
 		Name:     "CreateArticles",
 		FileName: "20221231054531293821_create_articles.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL);",
-			Down: "DROP TABLE articles;",
+			Up:   []string{"CREATE TABLE articles (id SERIAL, title VARCHAR NOT NULL);"},
+			Down: []string{"DROP TABLE articles;"},
 		},
 	})
 
@@ -39,8 +39,8 @@ func defaultMigrationList() MigrationList {
 		Name:     "CreateComments",
 		FileName: "20221231054532123874_create_comments.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE comments (id SERIAL, content TEXT NOT NULL);",
-			Down: "DROP TABLE comments;",
+			Up:   []string{"CREATE TABLE comments (id SERIAL, content TEXT NOT NULL);"},
+			Down: []string{"DROP TABLE comments;"},
 		},
 	})
 
@@ -86,8 +86,8 @@ func TestValidateDuplicateVersion(t *testing.T) {
 		Name:     "CreateLikes",
 		FileName: "20221231054532123874_create_likes.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);",
-			Down: "DROP TABLE likes;",
+			Up:   []string{"CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);"},
+			Down: []string{"DROP TABLE likes;"},
 		},
 	})
 
@@ -108,8 +108,8 @@ func TestValidateDuplicateName(t *testing.T) {
 		Name:     "CreateComments",
 		FileName: "20221231054540_create_comments.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);",
-			Down: "DROP TABLE likes;",
+			Up:   []string{"CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);"},
+			Down: []string{"DROP TABLE likes;"},
 		},
 	})
 
@@ -130,8 +130,8 @@ func TestValidateMismatchedName(t *testing.T) {
 		Name:     "CreateLikes",
 		FileName: "20221231054540_create_comments.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);",
-			Down: "DROP TABLE likes;",
+			Up:   []string{"CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);"},
+			Down: []string{"DROP TABLE likes;"},
 		},
 	})
 
@@ -152,8 +152,8 @@ func TestValidateMissingEngine(t *testing.T) {
 		Name:     "CreateLikes",
 		FileName: "20221231054540_create_likes.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);",
-			Down: "DROP TABLE likes;",
+			Up:   []string{"CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);"},
+			Down: []string{"DROP TABLE likes;"},
 		},
 	})
 
@@ -174,8 +174,8 @@ func TestValidateInvalidUpChange(t *testing.T) {
 		Name:     "CreateLikes",
 		FileName: "20221231054540_create_likes.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE",
-			Down: "DROP TABLE likes;",
+			Up:   []string{"CREATE TABLE"},
+			Down: []string{"DROP TABLE likes;"},
 		},
 	})
 
@@ -196,8 +196,64 @@ func TestValidateInvalidDownChange(t *testing.T) {
 		Name:     "CreateLikes",
 		FileName: "20221231054540_create_likes.yaml",
 		Changes: Changes{
-			Up:   "CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);",
-			Down: "DROP TABLES;",
+			Up:   []string{"CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);"},
+			Down: []string{"DROP TABLES;"},
+		},
+	})
+
+	valid, _ := Validate(list)
+
+	if valid {
+		t.Fatalf(`want validate == false (invalid), but got %v`, valid)
+	}
+}
+
+func TestValidateMissingDropWhenCreateIsPresent(t *testing.T) {
+	list = defaultMigrationList()
+
+	// Invalid Down Change (no drop instruction)
+	list.Insert(&Migration{
+		Version:  "20221231054540",
+		Engine:   "postgresql",
+		Name:     "CreateLikes",
+		FileName: "20221231054540_create_likes.yaml",
+		Changes: Changes{
+			Up:   []string{"CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);"},
+			Down: []string{"SELECT * FROM likes;"},
+		},
+	})
+
+	valid, _ := Validate(list)
+
+	if valid {
+		t.Fatalf(`want validate == false (invalid), but got %v`, valid)
+	}
+}
+
+func TestValidateCreateAndDropDifferentTables(t *testing.T) {
+	list = defaultMigrationList()
+
+	// Invalid Down Change (drops a different table)
+	list.Insert(&Migration{
+		Version:  "20221231054540",
+		Engine:   "postgresql",
+		Name:     "CreateLikes",
+		FileName: "20221231054540_create_likes.yaml",
+		Changes: Changes{
+			Up:   []string{"CREATE TABLE likes (id SERIAL, content_id INT NOT NULL);"},
+			Down: []string{"DROP TABLE accounts;"},
+		},
+	})
+
+	// Invalid Down Change (drops a different table)
+	list.Insert(&Migration{
+		Version:  "20221231054541",
+		Engine:   "postgresql",
+		Name:     "CreateReminders",
+		FileName: "20221231054540_create_reminders.yaml",
+		Changes: Changes{
+			Up:   []string{"CREATE TABLE reminders (id SERIAL, content_id INT NOT NULL, time DATETIME);"},
+			Down: []string{"DROP TABLE IF EXISTS accounts;"},
 		},
 	})
 
@@ -220,8 +276,8 @@ func TestMatchingFilesEmpty(t *testing.T) {
 func TestMatchingFiles(t *testing.T) {
 	matchedFiles, _ := MatchingFiles("../examples", &FilePattern)
 
-	if len(matchedFiles) != 3 {
-		t.Fatalf(`want len(matches) == 3, but got %v`, len(matchedFiles))
+	if len(matchedFiles) != 6 {
+		t.Fatalf(`want len(matches) == 6, but got %v`, len(matchedFiles))
 	}
 }
 

@@ -33,8 +33,8 @@ type Migration struct {
 }
 
 type Changes struct {
-	Up   string `yaml:"up"`
-	Down string `yaml:"down"`
+	Up   []string `yaml:"up"`
+	Down []string `yaml:"down"`
 }
 
 type MigratorVersion struct {
