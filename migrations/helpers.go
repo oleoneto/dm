@@ -65,6 +65,9 @@ func Validate(migrations MigrationList) (bool, string) {
 	migration := migrations.head
 
 	for migration != nil {
+		mismatchedInstructions := 0
+		mismatchedTables := map[string]string{}
+
 		if visitedVersions[migration.Version] {
 			return invalidMigration(*migration, "duplicate migration version")
 		}
@@ -82,12 +85,32 @@ func Validate(migrations MigrationList) (bool, string) {
 			return invalidMigration(*migration, "missing engine")
 		}
 
-		if len(strings.Split(migration.Changes.Up, " ")) < 5 {
-			return invalidMigration(*migration, "missing (or invalid) migrate instruction")
+		for _, change := range migration.Changes.Up {
+			if len(strings.Split(change, " ")) < 5 {
+				return invalidMigration(*migration, "missing (or invalid) migrate instruction")
+			}
+
+			mismatchedInstructions = checkForMatchingCreateAndDropInstructions(
+				change,
+				mismatchedTables,
+				mismatchedInstructions,
+			)
 		}
 
-		if len(strings.Split(migration.Changes.Down, " ")) < 3 {
-			return invalidMigration(*migration, "missing (or invalid) rollback instruction")
+		for _, change := range migration.Changes.Down {
+			if len(strings.Split(change, " ")) < 3 {
+				return invalidMigration(*migration, "missing (or invalid) rollback instruction")
+			}
+
+			mismatchedInstructions = checkForMatchingCreateAndDropInstructions(
+				change,
+				mismatchedTables,
+				mismatchedInstructions,
+			)
+		}
+
+		if mismatchedInstructions != 0 || len(mismatchedTables) != 0 {
+			return invalidMigration(*migration, "CREATE and DROP instructions must always be paired")
 		}
 
 		version, name, _ := strings.Cut(migration.FileName, "_")
@@ -109,6 +132,24 @@ func Validate(migrations MigrationList) (bool, string) {
 	}
 
 	return true, ""
+}
+
+func checkForMatchingCreateAndDropInstructions(change string, mismatchedTables map[string]string, mismatchedInstructions int) int {
+	// Validates that all `CREATE TABLE _name_` changes
+	// have a matching `DROP TABLE _name_`.
+	if CreateTablePattern.MatchString(change) {
+		mismatchedInstructions += 1
+		match := CreateTablePattern.FindStringSubmatch(change)
+		table := match[CreateTablePattern.SubexpIndex("TableName")]
+		mismatchedTables[table] = table
+	} else if DropTablePattern.MatchString(change) {
+		mismatchedInstructions -= 1
+		match := DropTablePattern.FindStringSubmatch(change)
+		table := match[DropTablePattern.SubexpIndex("TableName")]
+		delete(mismatchedTables, table)
+	}
+
+	return mismatchedInstructions
 }
 
 func invalidMigration(migration Migration, reason string) (bool, string) {

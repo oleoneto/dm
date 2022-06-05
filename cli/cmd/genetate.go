@@ -15,6 +15,17 @@ var (
 		Use:   "generate NAME",
 		Short: "Generate a database migration file in the migrations directory",
 		Args:  cobra.ExactArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			selectedAdapter, ok := SUPPORTED_ADAPTERS[adapter]
+
+			if !ok {
+				fmt.Fprintf(os.Stderr, "Unsupported adapter '%v'.\n", adapter)
+				os.Exit(1)
+			}
+
+			storeAdapter = selectedAdapter
+			runner.SetStore(storeAdapter)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			version, err := parsedVersionFlag(args[0])
 

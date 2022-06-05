@@ -12,7 +12,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var FilePattern = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).yaml$`)
+var (
+	FilePattern        = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).yaml$`)
+	CreateTablePattern = *regexp.MustCompile(`CREATE TABLE (?P<TableName>\w+)`)
+	DropTablePattern   = *regexp.MustCompile(`(DROP TABLE (IF EXISTS )?)(?P<TableName>\w+)`)
+)
 
 /*
 Runner:
@@ -159,10 +163,10 @@ func (runner *Runner) Generate(name string, directory string) Migration {
 		timestamp = exclusionPattern.ReplaceAllLiteralString(now, ``)
 	}
 
-	migration.Schema = 1
+	migration.Schema = 2
 	migration.Engine = strings.ToLower(runner.store.Name())
-	migration.Changes.Up = ""
-	migration.Changes.Down = ""
+	migration.Changes.Up = []string{""}
+	migration.Changes.Down = []string{""}
 	migration.Name = name
 	migration.Version = timestamp
 	migration.FileName = fmt.Sprintf("%v_%v.yaml", timestamp, strcase.ToSnake(name))
@@ -241,14 +245,17 @@ func (runner *Runner) Down(migrations MigrationList) error {
 
 	for migration != nil {
 		// Perform the migration's rollback instruction (down)
-		err := runner.store.Delete(migration.Changes.Down)
 
-		if err != nil {
-			fmt.Printf("\nRollback '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err)
-			return err
+		for _, change := range migration.Changes.Down {
+			err := runner.store.Delete(change)
+
+			if err != nil {
+				fmt.Printf("\nRollback '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err)
+				return err
+			}
 		}
 
-		err = runner.removeMigrationFromSchema(*migration, runner.schemaTable)
+		err := runner.removeMigrationFromSchema(*migration, runner.schemaTable)
 
 		if err != nil {
 			return err
@@ -363,10 +370,12 @@ func (runner *Runner) beforeAction() {
 }
 
 func (runner *Runner) performMigration(migration Migration) error {
-	err := runner.store.Create(migration.Changes.Up)
+	for _, change := range migration.Changes.Up {
+		err := runner.store.Create(change)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

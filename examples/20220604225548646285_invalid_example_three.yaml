@@ -1,13 +1,12 @@
 schema: 2
-name: CreateArticles
+name: InvalidExampleThree
 engine: postgresql
 changes:
   up:
     - |
-      CREATE TABLE articles (
+      CREATE TABLE likes (
         id SERIAL,
-        title VARCHAR NOT NULL,
-        content TEXT NOT NULL,
+        record_id INT NOT NULL,
         user_id INT,
 
         PRIMARY KEY(id),
@@ -18,4 +17,5 @@ changes:
           ON DELETE CASCADE
       );
   down:
-    - "DROP TABLE articles;"
+    - "DROP TABLE IF EXISTS likes;"
+    - "DROP TABLE IF EXISTS users;"

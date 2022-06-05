@@ -1,13 +1,14 @@
-schema: 1
+schema: 2
 name: CreateUsers
 engine: postgresql
 changes:
-  up: |
-    CREATE TABLE users (
-      id SERIAL,
-      name varchar not null,
-      username varchar unique not null,
-      PRIMARY KEY (id)
-    );
-  down: |
-    DROP TABLE users;
+  up:
+    - |
+      CREATE TABLE users (
+        id SERIAL,
+        name varchar not null,
+        username varchar unique not null,
+        PRIMARY KEY (id)
+      );
+  down:
+    - "DROP TABLE users;"

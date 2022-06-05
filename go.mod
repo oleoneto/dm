@@ -6,6 +6,7 @@ require (
 	github.com/georgysavva/scany v0.3.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jackc/pgx/v4 v4.16.0
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/spf13/cobra v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )

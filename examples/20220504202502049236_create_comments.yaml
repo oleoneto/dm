@@ -1,23 +1,24 @@
-schema: 1
+schema: 2
 name: CreateComments
 engine: postgresql
 changes:
-  up: |
-    CREATE TABLE comments (
-      id SERIAL,
-      content TEXT NOT NULL,
-      user_id INT,
-      article_id INT,
+  up: 
+    - |
+      CREATE TABLE comments (
+        id SERIAL,
+        content TEXT NOT NULL,
+        user_id INT,
+        article_id INT,
 
-      CONSTRAINT fk_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
+        CONSTRAINT fk_user
+          FOREIGN KEY (user_id)
+          REFERENCES users(id)
+          ON DELETE CASCADE,
 
-      CONSTRAINT fk_articles
-        FOREIGN KEY (article_id)
-        REFERENCES articles(id)
-        ON DELETE CASCADE
-    );
-  down: |
-    DROP TABLE comments;
+        CONSTRAINT fk_articles
+          FOREIGN KEY (article_id)
+          REFERENCES articles(id)
+          ON DELETE CASCADE
+      );
+  down:
+    - "DROP TABLE comments;"
