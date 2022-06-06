@@ -1,11 +1,18 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/spf13/cobra"
 )
+
+type ValidationOutput struct {
+	Message string
+	Valid   bool
+}
+
+func (v ValidationOutput) Description() string {
+	return v.Message
+}
 
 var (
 	validateCmd = &cobra.Command{
@@ -15,7 +22,8 @@ var (
 			files := migrations.LoadFiles(directory, &FilePattern)
 
 			if len(files) == 0 {
-				fmt.Println("No migrations found.")
+				validationOutput := &ValidationOutput{Message: "No migrations found.", Valid: false}
+				WithFormattedOutput(validationOutput)
 				return
 			}
 
@@ -23,11 +31,12 @@ var (
 			valid, reason := migrations.Validate(list)
 
 			if valid && reason == "" {
-				fmt.Println("Migrations are valid.")
-				return
+				validationOutput := &ValidationOutput{Message: "Migrations are valid.", Valid: valid}
+				WithFormattedOutput(validationOutput)
 			}
 
-			fmt.Println(reason)
+			validationOutput := &ValidationOutput{Message: reason, Valid: valid}
+			WithFormattedOutput(validationOutput)
 		},
 	}
 )

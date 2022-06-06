@@ -25,8 +25,8 @@ func TestStoreIsTracked(t *testing.T) {
 func TestStoreVersion(t *testing.T) {
 	version, tracked := Version(emptyStore, table)
 
-	if version != "0" || tracked {
-		t.Fatalf(`wanted version == "0" && tracked == false, but got (%v, %v)`, version, tracked)
+	if version.Version != "" || tracked {
+		t.Fatalf(`wanted version == "0" && tracked == false, but got (%v, %v)`, version.Version, tracked)
 	}
 }
 

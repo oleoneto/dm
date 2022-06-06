@@ -98,31 +98,33 @@ func IsUpToDate(store Store, schemaTable string, migrations MigrationList) bool 
 	recent := migrations.GetTail()
 
 	version, tracked := Version(store, schemaTable)
-	return tracked && (version == recent.Version)
+	return tracked && (version.Version == recent.Version)
 }
 
-func Version(store Store, schemaTable string) (string, bool) {
+func Version(store Store, schemaTable string) (MigratorVersion, bool) {
 	var versions []MigratorVersion
 	var schema []TableSchema
+
+	emptyVersion := MigratorVersion{}
 
 	err := store.Read(SchemaTableExists(schemaTable), &schema)
 
 	if err != nil || len(schema) == 0 || schema[0].TableName == "" {
-		return "0", false
+		return emptyVersion, false
 	}
 
 	err = store.Read(SelectMigrationsVersion(schemaTable), &versions)
 
 	if err != nil {
 		fmt.Printf("%v\n", err)
-		return "0", false
+		return emptyVersion, false
 	}
 
 	if len(versions) == 0 {
-		return "0", true
+		return emptyVersion, true
 	}
 
-	return fmt.Sprintf("%v (%v).\nApplied at: %v", versions[0].Version, versions[0].Name, versions[0].CreatedAt), true
+	return versions[0], true
 }
 
 func StartTracking(store Store, schemaTable string) bool {
@@ -350,7 +352,7 @@ func (runner *Runner) AppliedMigrations(directory string, filePattern *regexp.Re
 	return res
 }
 
-func (runner *Runner) Version() (string, bool) {
+func (runner *Runner) Version() (MigratorVersion, bool) {
 	runner.beforeAction()
 	return Version(runner.store, runner.schemaTable)
 }

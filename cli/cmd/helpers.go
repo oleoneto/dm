@@ -3,7 +3,13 @@ package cmd
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/drewstinnett/go-output-format/formatter"
 )
+
+type Formattable interface {
+	Description() string
+}
 
 type VersionFlag struct {
 	Value string
@@ -14,6 +20,27 @@ type InvalidFlagError struct{}
 
 func (e InvalidFlagError) Error() string {
 	return "invalid flag value"
+}
+
+func WithFormattedOutput(data Formattable) {
+	config := &formatter.Config{
+		Format:   format,
+		Template: template,
+	}
+
+	output, err := formatter.OutputData(data, config)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	switch config.Format {
+	case "plain":
+		fmt.Println(data.Description())
+	default:
+		fmt.Println(string(output))
+	}
 }
 
 var (

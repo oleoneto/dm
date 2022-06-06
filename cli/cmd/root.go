@@ -18,6 +18,8 @@ var (
 	databaseUrl  = os.Getenv("DATABASE_URL")
 	table        = "_migrations"
 	FilePattern  = migrations.FilePattern
+	format       = "plain"
+	template     = ""
 
 	SUPPORTED_ADAPTERS = map[string]migrations.Store{
 		"postgresql": stores.Postgres{URL: databaseUrl},
@@ -28,6 +30,14 @@ var (
 		Use:   "dm",
 		Short: "DM, short for Database Migrator is a migration management tool.",
 		Run:   func(cmd *cobra.Command, args []string) {},
+	}
+
+	cliVersionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Shows the version of the CLI",
+		Run: func(cmd *cobra.Command, args []string) {
+			WithFormattedOutput(&version)
+		},
 	}
 )
 
@@ -62,6 +72,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&adapter, "adapter", "a", adapter, "database adapter")
 	rootCmd.PersistentFlags().StringVarP(&directory, "directory", "d", directory, "migrations directory")
 	rootCmd.PersistentFlags().StringVarP(&table, "table", "t", table, "table wherein migrations are tracked")
+	rootCmd.PersistentFlags().StringVarP(&format, "output-format", "o", format, "output format")
+	rootCmd.PersistentFlags().StringVarP(&template, "output-template", "y", template, "template (used when output format is 'gotemplate')")
 
 	// Sub-commands
 	rootCmd.AddCommand(generateCmd)
@@ -69,6 +81,7 @@ func init() {
 	rootCmd.AddCommand(rollbackCmd)
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(cliVersionCmd)
 
 	// Runner configuration
 	// These changes can be overridden by validateDatabaseConfig()
