@@ -3,7 +3,7 @@ module github.com/cleopatrio/db-migrator-lib/api
 go 1.18
 
 require (
-	github.com/cleopatrio/db-migrator-lib v0.0.0-00010101000000-000000000000
+	github.com/cleopatrio/db-migrator-lib v1.0.0
 	github.com/gin-gonic/gin v1.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
@@ -11,7 +11,6 @@ require (
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
-	github.com/drewstinnett/go-output-format v1.0.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -34,4 +33,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/cleopatrio/db-migrator-lib => ../
+// replace github.com/cleopatrio/db-migrator-lib => ../
