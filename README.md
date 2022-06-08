@@ -12,6 +12,7 @@ A database migration tool.
     - [Generate](#generate)
     - [Validate](#validate)
     - [Show](#show)
+  - [API (experimental feature)](#api-experimental-feature)
   - [To Do](#to-do)
 
 ## Commands
@@ -140,6 +141,24 @@ Available Commands:
   pending     List only pending migrations
   version     Shows the most recently applied migration
 ```
+
+## API (experimental feature)
+Beginning in version 2.0.0, the CLI now features a server that exposes some of its functionality as RESTful endpoints. 
+
+**Endpoints**
+```
+GET /
+GET /health
+GET /migrations
+GET /migrations/applied
+GET /migrations/pending
+
+POST /migrations/migrate
+POST /migrations/rollback
+```
+
+The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`.
+
 
 ## To Do
 [Check out open issues](https://github.com/cleopatrio/db-migrator-lib/issues).
