@@ -10,6 +10,9 @@
 
 # Don't track executable
 dm
+dm-api
+*__debug_bin
+.build/*
 
 # Test binary, built with `go test -c`
 *.test
