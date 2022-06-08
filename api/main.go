@@ -12,7 +12,7 @@ var (
 	databaseURL         = kingpin.Flag("database-url", "database url").OverrideDefaultFromEnvar("DATABASE_URL").Required().String()
 	migrationsDirectory = kingpin.Flag("directory", "migrations directory").OverrideDefaultFromEnvar("MIGRATIONS_DIRECTORY").Required().String()
 	migrationsTableName = kingpin.Flag("table", "migrations table").OverrideDefaultFromEnvar("MIGRATIONS_TABLE").Required().String()
-	serverPort          = kingpin.Flag("port", "Server port").OverrideDefaultFromEnvar("SERVER_PORT").Required().Int()
+	serverPort          = kingpin.Flag("port", "Server port").OverrideDefaultFromEnvar("SERVER_PORT").Int()
 )
 
 func overrideEnvironmentVars() {
@@ -26,6 +26,10 @@ func main() {
 	kingpin.Parse()
 
 	overrideEnvironmentVars()
+
+	if *serverPort == 0 {
+		*serverPort = 3809
+	}
 
 	app := server.API()
 
