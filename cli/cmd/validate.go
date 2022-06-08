@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +26,7 @@ var (
 
 			if len(files) == 0 {
 				validationOutput := &ValidationOutput{Message: "No migrations found.", Valid: false}
-				WithFormattedOutput(validationOutput)
+				logger.Custom(format, template).WithFormattedOutput(validationOutput, os.Stdout)
 				return
 			}
 
@@ -32,11 +35,11 @@ var (
 
 			if valid && reason == "" {
 				validationOutput := &ValidationOutput{Message: "Migrations are valid.", Valid: valid}
-				WithFormattedOutput(validationOutput)
+				logger.Custom(format, template).WithFormattedOutput(validationOutput, os.Stdout)
 			}
 
 			validationOutput := &ValidationOutput{Message: reason, Valid: valid}
-			WithFormattedOutput(validationOutput)
+			logger.Custom(format, template).WithFormattedOutput(validationOutput, os.Stdout)
 		},
 	}
 )

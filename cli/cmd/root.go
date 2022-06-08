@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/cleopatrio/db-migrator-lib/stores"
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ var (
 		Use:   "version",
 		Short: "Shows the version of the CLI",
 		Run: func(cmd *cobra.Command, args []string) {
-			WithFormattedOutput(&version)
+			logger.Custom(format, template).WithFormattedOutput(&version, os.Stdout)
 		},
 	}
 )
@@ -47,20 +48,26 @@ func Execute() error {
 
 func validateDatabaseConfig() {
 	if databaseUrl == "" {
-		fmt.Fprintf(os.Stderr, "No database specified.\nProvide a value for the flag or set DATABASE_URL in your environment.\n")
-		os.Exit(1)
+		message := logger.ApplicationError{
+			Error: "No database specified.\nProvide a value for the flag or set DATABASE_URL in your environment.\n",
+		}
+
+		logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
+		os.Exit(101)
 	}
 
 	selectedAdapter, ok := SUPPORTED_ADAPTERS[adapter]
 
 	if !ok {
-		fmt.Fprintf(os.Stderr, "Unsupported adapter '%v'.\n", adapter)
-		os.Exit(1)
+		message := logger.ApplicationError{Error: fmt.Sprintf("Unsupported adapter '%v'", adapter)}
+		logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
+		os.Exit(102)
 	}
 
 	storeAdapter = selectedAdapter
 	runner.SetStore(storeAdapter)
 	runner.SetSchemaTable(table)
+	runner.SetLogger(format, template)
 }
 
 func init() {

@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +26,7 @@ var (
 			list := migrations.BuildMigrations(files, directory, &FilePattern)
 			m := list.ToSlice()
 
-			WithFormattedOutput(&m)
+			logger.Custom(format, template).WithFormattedOutput(&m, os.Stdout)
 		},
 	}
 
@@ -35,7 +38,7 @@ var (
 			list := runner.AppliedMigrations(directory, &FilePattern, loadFromDir)
 			m := list.ToSlice()
 
-			WithFormattedOutput(&m)
+			logger.Custom(format, template).WithFormattedOutput(&m, os.Stdout)
 		},
 	}
 
@@ -43,14 +46,11 @@ var (
 		Use:     "pending",
 		Short:   "List only pending migrations",
 		Aliases: []string{"p"},
-		PreRun: func(cmd *cobra.Command, args []string) {
-			validateDatabaseConfig()
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			list := runner.PendingMigrations(directory, &FilePattern)
 			m := list.ToSlice()
 
-			WithFormattedOutput(&m)
+			logger.Custom(format, template).WithFormattedOutput(&m, os.Stdout)
 		},
 	}
 
@@ -60,7 +60,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			version, _ := runner.Version()
 
-			WithFormattedOutput(&version)
+			logger.Custom(format, template).WithFormattedOutput(&version, os.Stdout)
 		},
 	}
 )

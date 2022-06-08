@@ -18,6 +18,8 @@ func MatchingFiles(dir string, pattern *regexp.Regexp) ([]fs.FileInfo, error) {
 
 	if err != nil {
 		fmt.Println(err)
+		// FIX: Error should be Formattable
+		// logger.Default().WithFormattedOutput(err, os.Stderr)
 		return matches, err
 	}
 
@@ -153,5 +155,5 @@ func checkForMatchingCreateAndDropInstructions(change string, mismatchedTables m
 }
 
 func invalidMigration(migration Migration, reason string) (bool, string) {
-	return false, fmt.Sprintf("Invalid migration: %v.\nReason: %v.\n", migration.Description(), reason)
+	return false, fmt.Sprintf("Invalid migration: %v. Reason: %v.", migration.Description(), reason)
 }

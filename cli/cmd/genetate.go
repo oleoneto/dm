@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
@@ -19,7 +20,8 @@ var (
 			selectedAdapter, ok := SUPPORTED_ADAPTERS[adapter]
 
 			if !ok {
-				fmt.Fprintf(os.Stderr, "Unsupported adapter '%v'.\n", adapter)
+				message := logger.ApplicationError{Error: fmt.Sprintf("Unsupported adapter '%v'", adapter)}
+				logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
 				os.Exit(1)
 			}
 
@@ -37,7 +39,8 @@ var (
 
 			for _, file := range files {
 				if strings.Contains(strcase.ToCamel(file.Name()), version.Value) {
-					fmt.Println("Error: a migration with this name already exists.")
+					message := logger.ApplicationError{Error: "Error: migration with this name already exists."}
+					logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
 					os.Exit(1)
 				}
 			}
@@ -45,7 +48,8 @@ var (
 			migration := runner.Generate(version.Value, directory)
 
 			if migration.FileName == "" {
-				fmt.Println("Error: migration file not created.")
+				message := logger.ApplicationError{Error: "Error: migration file not created."}
+				logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
 				os.Exit(1)
 			}
 		},

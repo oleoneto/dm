@@ -1,15 +1,11 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 	"regexp"
 
-	"github.com/drewstinnett/go-output-format/formatter"
+	"github.com/cleopatrio/db-migrator-lib/logger"
 )
-
-type Formattable interface {
-	Description() string
-}
 
 type VersionFlag struct {
 	Value string
@@ -20,27 +16,6 @@ type InvalidFlagError struct{}
 
 func (e InvalidFlagError) Error() string {
 	return "invalid flag value"
-}
-
-func WithFormattedOutput(data Formattable) {
-	config := &formatter.Config{
-		Format:   format,
-		Template: template,
-	}
-
-	output, err := formatter.OutputData(data, config)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	switch config.Format {
-	case "plain":
-		fmt.Println(data.Description())
-	default:
-		fmt.Println(string(output))
-	}
 }
 
 var (
@@ -59,7 +34,10 @@ func parsedVersionFlag(flag string) (VersionFlag, error) {
 		return parsedFlag, nil
 	}
 
-	fmt.Println("Error: invalid migration version or name")
+	message := logger.ApplicationMessage{
+		Message: "Error: invalid migration version or name",
+	}
+	logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
 
 	return parsedFlag, new(InvalidFlagError)
 }
