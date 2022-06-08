@@ -21,13 +21,13 @@ type MigrationFile struct {
 }
 
 type Migration struct {
-	Id       int     `yaml:"-"`
+	Id       int     `yaml:"-" json:"-"`
 	FileName string  `yaml:"-"`
-	Version  string  `yaml:"-"`
-	Schema   int     `yaml:"schema"`
+	Version  string  `yaml:"version"`
+	Schema   int     `yaml:"schema,omitempty" json:"-"`
 	Name     string  `yaml:"name"`
-	Engine   string  `yaml:"engine"`
-	Changes  Changes `yaml:"changes"`
+	Engine   string  `yaml:"engine" json:"-"`
+	Changes  Changes `yaml:"changes,omitempty" json:"-"`
 	next     *Migration
 	previous *Migration
 }
@@ -48,6 +48,10 @@ type TableSchema struct {
 	TableSchema string `json:"table_schema" db:"table_schema"`
 	TableName   string `json:"table_name" db:"table_name"`
 	TableType   string `json:"table_type" db:"table_type"`
+}
+
+func (V *MigratorVersion) Description() string {
+	return fmt.Sprintf("%v (%v).\nApplied at: %v", V.Version, V.Name, V.CreatedAt)
 }
 
 func (M *Migration) Description() string {
@@ -73,6 +77,21 @@ func (m Migrations) Less(left, right int) bool {
 
 func (m Migrations) Swap(left, right int) {
 	m[left], m[right] = m[right], m[left]
+}
+
+// MARK: - Implements Formattable
+func (m Migrations) Description() string {
+	descriptions := ""
+
+	if m.Len() == 0 {
+		return "No migrations."
+	}
+
+	for _, migration := range m {
+		descriptions += fmt.Sprintln(migration.Description())
+	}
+
+	return descriptions
 }
 
 // MARK: - Implements Hashable

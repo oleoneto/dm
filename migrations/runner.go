@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/iancoleman/strcase"
 	"gopkg.in/yaml.v2"
 )
@@ -30,9 +31,24 @@ Runner:
 type Runner struct {
 	schemaTable string
 	store       Store
+	logger      logger.Logger
 }
 
 // MARK: Accessors
+
+func (runner *Runner) LogError(err string) {
+	message := logger.ApplicationError{Error: err}
+	runner.logger.WithFormattedOutput(&message, os.Stderr)
+}
+
+func (runner *Runner) LogInfo(info string) {
+	message := logger.ApplicationMessage{Message: info}
+	runner.logger.WithFormattedOutput(&message, os.Stderr)
+}
+
+func (runner *Runner) SetLogger(format, template string) {
+	runner.logger = logger.Custom(format, template)
+}
 
 func (runner *Runner) SetSchemaTable(table string) {
 	runner.schemaTable = table
@@ -98,31 +114,33 @@ func IsUpToDate(store Store, schemaTable string, migrations MigrationList) bool 
 	recent := migrations.GetTail()
 
 	version, tracked := Version(store, schemaTable)
-	return tracked && (version == recent.Version)
+	return tracked && (version.Version == recent.Version)
 }
 
-func Version(store Store, schemaTable string) (string, bool) {
+func Version(store Store, schemaTable string) (MigratorVersion, bool) {
 	var versions []MigratorVersion
 	var schema []TableSchema
+
+	emptyVersion := MigratorVersion{}
 
 	err := store.Read(SchemaTableExists(schemaTable), &schema)
 
 	if err != nil || len(schema) == 0 || schema[0].TableName == "" {
-		return "0", false
+		return emptyVersion, false
 	}
 
 	err = store.Read(SelectMigrationsVersion(schemaTable), &versions)
 
 	if err != nil {
 		fmt.Printf("%v\n", err)
-		return "0", false
+		return emptyVersion, false
 	}
 
 	if len(versions) == 0 {
-		return "0", true
+		return emptyVersion, true
 	}
 
-	return fmt.Sprintf("%v (%v).\nApplied at: %v", versions[0].Version, versions[0].Name, versions[0].CreatedAt), true
+	return versions[0], true
 }
 
 func StartTracking(store Store, schemaTable string) bool {
@@ -174,13 +192,13 @@ func (runner *Runner) Generate(name string, directory string) Migration {
 	content, err := yaml.Marshal(&migration)
 
 	if err != nil {
-		fmt.Printf("Error while marshaling. %v\n", err)
+		runner.LogError(fmt.Sprintf("Error while marshaling. %v\n", err))
 	}
 
 	err = ioutil.WriteFile(fmt.Sprintf("%v/%v", directory, migration.FileName), content, 0644)
 
 	if err != nil {
-		fmt.Printf("Error while writing to file %v\n", err)
+		runner.LogError(fmt.Sprintf("Error while writing to file %v\n", err))
 	}
 
 	return migration
@@ -190,19 +208,19 @@ func (runner *Runner) Up(migrations MigrationList) error {
 	runner.beforeAction()
 
 	if migrations.Size() == 0 {
-		fmt.Println("No migrations to run.")
+		runner.LogInfo("No migrations to run.")
 		return nil
 	}
 
 	valid, reason := Validate(migrations)
 
 	if !valid {
-		fmt.Println(reason)
+		runner.LogError(reason)
 		return new(ValidationError)
 	}
 
 	if IsUpToDate(runner.store, runner.schemaTable, migrations) {
-		fmt.Println("Migrations are up-to-date.")
+		runner.LogInfo("Migrations are up-to-date.")
 		return nil
 	}
 
@@ -212,9 +230,8 @@ func (runner *Runner) Up(migrations MigrationList) error {
 		err := runner.performMigration(*migration)
 
 		if err != nil {
-			fmt.Printf("\nMigration '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err)
-
 			_ = runner.removeMigrationFromSchema(*migration, runner.schemaTable)
+			runner.LogError(fmt.Sprintf("\nMigration '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err))
 			return err
 		}
 
@@ -222,6 +239,8 @@ func (runner *Runner) Up(migrations MigrationList) error {
 
 		migration = migration.Next()
 	}
+
+	runner.logger.ReleaseCachedMessages(os.Stdout)
 
 	return nil
 }
@@ -232,12 +251,12 @@ func (runner *Runner) Down(migrations MigrationList) error {
 	valid, reason := Validate(migrations)
 
 	if !valid {
-		fmt.Println(reason)
+		runner.LogError(reason)
 		return new(ValidationError)
 	}
 
 	if IsEmpty(runner.store, runner.schemaTable) {
-		fmt.Println("No migrations to rollback.")
+		runner.LogInfo("No migrations to rollback.")
 		return nil
 	}
 
@@ -250,7 +269,7 @@ func (runner *Runner) Down(migrations MigrationList) error {
 			err := runner.store.Delete(change)
 
 			if err != nil {
-				fmt.Printf("\nRollback '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err)
+				runner.LogError(fmt.Sprintf("\nRollback '%v' (%v) failed.\n%v \n", migration.Name, migration.Version, err))
 				return err
 			}
 		}
@@ -263,6 +282,8 @@ func (runner *Runner) Down(migrations MigrationList) error {
 
 		migration = migration.Next()
 	}
+
+	runner.logger.ReleaseCachedMessages(os.Stdout)
 
 	return nil
 }
@@ -284,7 +305,7 @@ func (runner *Runner) PendingMigrations(directory string, filePattern *regexp.Re
 	err := runner.store.Read(SelectMigrations(runner.schemaTable), &migrated)
 
 	if err != nil {
-		fmt.Printf("An error occurred.\nError: %v\n", err)
+		runner.LogError(fmt.Sprintf("An error occurred.\nError: %v\n", err))
 	}
 
 	migratedHash := migrated.ToHash()
@@ -326,7 +347,7 @@ func (runner *Runner) AppliedMigrations(directory string, filePattern *regexp.Re
 	err := runner.store.Read(SelectMigrations(runner.schemaTable), &migrated)
 
 	if err != nil {
-		fmt.Printf("An error occurred.\nError: %v\n", err)
+		runner.LogError(fmt.Sprintf("An error occurred.\nError: %v\n", err))
 	}
 
 	for _, curr := range migrated {
@@ -350,7 +371,7 @@ func (runner *Runner) AppliedMigrations(directory string, filePattern *regexp.Re
 	return res
 }
 
-func (runner *Runner) Version() (string, bool) {
+func (runner *Runner) Version() (MigratorVersion, bool) {
 	runner.beforeAction()
 	return Version(runner.store, runner.schemaTable)
 }
@@ -359,12 +380,12 @@ func (runner *Runner) Version() (string, bool) {
 
 func (runner *Runner) beforeAction() {
 	if runner.GetSchemaTable() == "" {
-		fmt.Println("No schema table provided.")
+		runner.LogError("No schema table provided.")
 		os.Exit(1)
 	}
 
 	if runner.store == nil {
-		fmt.Println("No store adapter specified.")
+		runner.LogError("No store adapter specified.")
 		os.Exit(1)
 	}
 }
@@ -392,7 +413,7 @@ func (runner *Runner) registerMigration(migration Migration, table string) error
 		return err
 	}
 
-	fmt.Printf("Added version: %v. Name: %s\n", migration.Version, migration.Name)
+	runner.logger.CacheMessage(fmt.Sprintf("Added version: %v. Name: %s", migration.Version, migration.Name))
 	return nil
 }
 
@@ -407,6 +428,6 @@ func (runner *Runner) removeMigrationFromSchema(migration Migration, table strin
 		return err
 	}
 
-	fmt.Printf("Removed version: %v, name: %s\n", migration.Version, migration.Name)
+	runner.logger.CacheMessage(fmt.Sprintf("Removed version: %v, Name: %s", migration.Version, migration.Name))
 	return nil
 }

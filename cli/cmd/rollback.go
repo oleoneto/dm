@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +14,7 @@ var (
 		Short:   "Rollback migration(s)",
 		Aliases: []string{"r"},
 		Args:    cobra.MaximumNArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			validateDatabaseConfig()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -33,7 +33,8 @@ var (
 			list := runner.AppliedMigrations(directory, &FilePattern, loadFromDir)
 
 			if list.Size() == 0 {
-				fmt.Println("No applied migrations to rollback.")
+				message := logger.ApplicationMessage{Message: "No applied migrations to rollback."}
+				logger.Custom(format, template).WithFormattedOutput(&message, os.Stdout)
 				return
 			}
 
@@ -43,8 +44,9 @@ var (
 				sequence, found := list.Find(strcase.ToCamel(version.Value))
 
 				if !found {
-					fmt.Fprintln(os.Stderr, "Error: Migration not found.")
-					os.Exit(INVALID_INPUT_ERROR)
+					message := logger.ApplicationMessage{Message: "Nothing to do."}
+					logger.Custom(format, template).WithFormattedOutput(&message, os.Stdout)
+					return
 				}
 
 				list = sequence

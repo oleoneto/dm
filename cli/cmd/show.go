@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"fmt"
-	"strings"
+	"os"
 
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
-	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 )
 
@@ -24,14 +23,10 @@ var (
 		Short: "List all migrations for a given application",
 		Run: func(cmd *cobra.Command, args []string) {
 			files := migrations.LoadFiles(directory, &FilePattern)
+			list := migrations.BuildMigrations(files, directory, &FilePattern)
+			m := list.ToSlice()
 
-			for _, file := range files {
-				version, name, _ := strings.Cut(file.Name(), "_")
-				name = strings.Split(name, ".")[0]
-				name = strcase.ToCamel(name)
-
-				fmt.Printf("Version: %v (%v)\n", version, name)
-			}
+			logger.Custom(format, template).WithFormattedOutput(&m, os.Stdout)
 		},
 	}
 
@@ -40,18 +35,10 @@ var (
 		Short: "List only applied migrations",
 		Run: func(cmd *cobra.Command, args []string) {
 			loadFromDir := false
-			applied := runner.AppliedMigrations(directory, &FilePattern, loadFromDir)
+			list := runner.AppliedMigrations(directory, &FilePattern, loadFromDir)
+			m := list.ToSlice()
 
-			if applied.Size() == 0 {
-				fmt.Println("No applied migrations.")
-			}
-
-			migration := applied.GetHead()
-
-			for migration != nil {
-				fmt.Println(migration.Description())
-				migration = migration.Next()
-			}
+			logger.Custom(format, template).WithFormattedOutput(&m, os.Stdout)
 		},
 	}
 
@@ -59,18 +46,11 @@ var (
 		Use:     "pending",
 		Short:   "List only pending migrations",
 		Aliases: []string{"p"},
-		PreRun: func(cmd *cobra.Command, args []string) {
-			validateDatabaseConfig()
-		},
 		Run: func(cmd *cobra.Command, args []string) {
-			pending := runner.PendingMigrations(directory, &FilePattern)
+			list := runner.PendingMigrations(directory, &FilePattern)
+			m := list.ToSlice()
 
-			migration := pending.GetHead()
-
-			for migration != nil {
-				fmt.Println(migration.Description())
-				migration = migration.Next()
-			}
+			logger.Custom(format, template).WithFormattedOutput(&m, os.Stdout)
 		},
 	}
 
@@ -79,7 +59,8 @@ var (
 		Short: "Shows the most recently applied migration",
 		Run: func(cmd *cobra.Command, args []string) {
 			version, _ := runner.Version()
-			fmt.Printf("Current version: %v\n", version)
+
+			logger.Custom(format, template).WithFormattedOutput(&version, os.Stdout)
 		},
 	}
 )

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/cleopatrio/db-migrator-lib/stores"
 	"github.com/spf13/cobra"
@@ -18,6 +19,8 @@ var (
 	databaseUrl  = os.Getenv("DATABASE_URL")
 	table        = "_migrations"
 	FilePattern  = migrations.FilePattern
+	format       = "plain"
+	template     = ""
 
 	SUPPORTED_ADAPTERS = map[string]migrations.Store{
 		"postgresql": stores.Postgres{URL: databaseUrl},
@@ -29,6 +32,14 @@ var (
 		Short: "DM, short for Database Migrator is a migration management tool.",
 		Run:   func(cmd *cobra.Command, args []string) {},
 	}
+
+	cliVersionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Shows the version of the CLI",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger.Custom(format, template).WithFormattedOutput(&version, os.Stdout)
+		},
+	}
 )
 
 func Execute() error {
@@ -37,20 +48,26 @@ func Execute() error {
 
 func validateDatabaseConfig() {
 	if databaseUrl == "" {
-		fmt.Fprintf(os.Stderr, "No database specified.\nProvide a value for the flag or set DATABASE_URL in your environment.\n")
-		os.Exit(1)
+		message := logger.ApplicationError{
+			Error: "No database specified.\nProvide a value for the flag or set DATABASE_URL in your environment.\n",
+		}
+
+		logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
+		os.Exit(101)
 	}
 
 	selectedAdapter, ok := SUPPORTED_ADAPTERS[adapter]
 
 	if !ok {
-		fmt.Fprintf(os.Stderr, "Unsupported adapter '%v'.\n", adapter)
-		os.Exit(1)
+		message := logger.ApplicationError{Error: fmt.Sprintf("Unsupported adapter '%v'", adapter)}
+		logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
+		os.Exit(102)
 	}
 
 	storeAdapter = selectedAdapter
 	runner.SetStore(storeAdapter)
 	runner.SetSchemaTable(table)
+	runner.SetLogger(format, template)
 }
 
 func init() {
@@ -62,6 +79,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&adapter, "adapter", "a", adapter, "database adapter")
 	rootCmd.PersistentFlags().StringVarP(&directory, "directory", "d", directory, "migrations directory")
 	rootCmd.PersistentFlags().StringVarP(&table, "table", "t", table, "table wherein migrations are tracked")
+	rootCmd.PersistentFlags().StringVarP(&format, "output-format", "o", format, "output format")
+	rootCmd.PersistentFlags().StringVarP(&template, "output-template", "y", template, "template (used when output format is 'gotemplate')")
 
 	// Sub-commands
 	rootCmd.AddCommand(generateCmd)
@@ -69,6 +88,7 @@ func init() {
 	rootCmd.AddCommand(rollbackCmd)
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(cliVersionCmd)
 
 	// Runner configuration
 	// These changes can be overridden by validateDatabaseConfig()

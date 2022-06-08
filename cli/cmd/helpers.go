@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 	"regexp"
+
+	"github.com/cleopatrio/db-migrator-lib/logger"
 )
 
 type VersionFlag struct {
@@ -32,7 +34,10 @@ func parsedVersionFlag(flag string) (VersionFlag, error) {
 		return parsedFlag, nil
 	}
 
-	fmt.Println("Error: invalid migration version or name")
+	message := logger.ApplicationMessage{
+		Message: "Error: invalid migration version or name",
+	}
+	logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
 
 	return parsedFlag, new(InvalidFlagError)
 }
