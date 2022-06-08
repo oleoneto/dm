@@ -1,10 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
-	"os/exec"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,37 +19,30 @@ func (StaticController) Ping(ctx *gin.Context) {
 	ctx.IndentedJSON(200, message)
 }
 
-func (StaticController) Health(ctx *gin.Context) {
+func (controller *StaticController) Health(ctx *gin.Context) {
 	args := []string{"show", "pending"}
-	cmd_args := ctx.MustGet("command_flags").([]string)
-	cmd_args = append(args, cmd_args...)
+	flags := ctx.MustGet("command_flags").([]string)
 
-	output, err := exec.Command("dm", cmd_args...).Output()
+	response, err := StatelessExecutionStrategy(args, flags)
 
 	if err != nil {
-		log.Println("Error: failed to execute command", err)
-		log.Println("Command args:", cmd_args)
-		log.Println("Command output:", string(output))
+		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
 		return
 	}
 
-	err = json.Unmarshal(output, &content.Migrations)
+	data, castable := response.(APIMigrations)
 
-	if err != nil {
-		log.Println("Error: failed to encode as JSON", err)
-		log.Println("Content:", output)
+	if castable {
+		// -- Unhealthy
+		if len(data.Migrations) != 0 {
+			ctx.IndentedJSON(ERROR_STATUS_CODE, APIError{Error: fmt.Sprintf("%v pending migrations", len(data.Migrations))})
+			return
+		}
+
+		// -- Healthy
+		ctx.IndentedJSON(SUCCESS_STATUS_CODE, APIMessage{Message: "No pending migrations"})
 		return
 	}
 
-	content.Count = content.Migrations.Len()
-
-	// Healthy service
-	if content.Migrations.Len() == 0 {
-		message := APIMessage{Message: "No pending migrations"}
-		ctx.IndentedJSON(200, message)
-	}
-
-	// Unheathy
-	message := APIMessage{Message: fmt.Sprintf("%v pending migrations", content.Migrations.Len())}
-	ctx.IndentedJSON(500, message)
+	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
 }
