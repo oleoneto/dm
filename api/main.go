@@ -12,10 +12,14 @@ var (
 	databaseURL         = kingpin.Flag("database-url", "database url").OverrideDefaultFromEnvar("DATABASE_URL").Required().String()
 	migrationsDirectory = kingpin.Flag("directory", "migrations directory").OverrideDefaultFromEnvar("MIGRATIONS_DIRECTORY").Required().String()
 	migrationsTableName = kingpin.Flag("table", "migrations table").OverrideDefaultFromEnvar("MIGRATIONS_TABLE").Required().String()
-	serverPort          = kingpin.Flag("port", "Server port").OverrideDefaultFromEnvar("SERVER_PORT").Int()
+	namespace           = kingpin.Flag("namespace", "namespace prefix").OverrideDefaultFromEnvar("API_NAMESPACE").String()
+	serverPort          = kingpin.Flag("port", "server port").OverrideDefaultFromEnvar("SERVER_PORT").Int()
+	versionPrefix       = kingpin.Flag("version-prefix", "API version prefix").OverrideDefaultFromEnvar("API_VERSION").String()
 )
 
 func overrideEnvironmentVars() {
+	os.Setenv("API_NAMESPACE", *namespace)
+	os.Setenv("API_VERSION", *versionPrefix)
 	os.Setenv("DATABASE_URL", *databaseURL)
 	os.Setenv("MIGRATIONS_DIRECTORY", *migrationsDirectory)
 	os.Setenv("MIGRATIONS_TABLE", *migrationsTableName)
@@ -31,7 +35,15 @@ func main() {
 		*serverPort = 3809
 	}
 
-	app := server.API()
+	if *namespace == "" {
+		*namespace = "migrations"
+	}
+
+	if *versionPrefix == "" {
+		*versionPrefix = "v1"
+	}
+
+	app := server.API(*versionPrefix, *namespace)
 
 	app.Run(fmt.Sprintf(":%v", *serverPort))
 }
