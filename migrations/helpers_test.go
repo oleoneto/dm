@@ -281,6 +281,24 @@ func TestMatchingFiles(t *testing.T) {
 	}
 }
 
+// MARK: File Loader
+
+func TestLoadFilesInEmptyDirectory(t *testing.T) {
+	files := LoadFiles("migrations", &FilePattern)
+
+	if len(files) != 0 {
+		t.Fatalf(`want size == 0, but got %v`, len(files))
+	}
+}
+
+func TestLoadFiles(t *testing.T) {
+	files := LoadFiles("../examples", &FilePattern)
+
+	if len(files) == 0 {
+		t.Fatalf(`want size > 0, but got %v`, len(files))
+	}
+}
+
 // MARK: Migration Builder
 
 func TestBuildMigrationsEmpty(t *testing.T) {

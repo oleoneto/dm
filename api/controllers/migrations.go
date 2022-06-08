@@ -1,10 +1,6 @@
 package controllers
 
 import (
-	"bytes"
-	"encoding/json"
-	"log"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,99 +12,84 @@ type RequestBody struct {
 	Migration string `json:"migration"`
 }
 
-var content = APIMigrations{}
-
 // MARK: - Stateless Operations
 // ------------------------------------------------------------------
 
 func (controller *MigrationsController) List(ctx *gin.Context) {
 	args := []string{"show", "all"}
+	flags := ctx.MustGet("command_flags").([]string)
 
-	stdout, stderr, exited := controller.CallCommand(args, ctx.MustGet("command_flags").([]string))
-	data := APIMigrations{}
+	response, err := StatelessExecutionStrategy(args, flags)
 
-	if controller.HandleCommandErrors(stdout, stderr, exited, ctx) {
+	if err != nil {
+		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
 		return
 	}
 
-	controller.ParseStdoutAsJSON(stdout, data, ctx)
+	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
 }
 
 func (controller *MigrationsController) Applied(ctx *gin.Context) {
 	args := []string{"show", "applied"}
+	flags := ctx.MustGet("command_flags").([]string)
 
-	stdout, stderr, exited := controller.CallCommand(args, ctx.MustGet("command_flags").([]string))
-	data := APIMigrations{}
+	response, err := StatelessExecutionStrategy(args, flags)
 
-	if controller.HandleCommandErrors(stdout, stderr, exited, ctx) {
+	if err != nil {
+		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
 		return
 	}
 
-	controller.ParseStdoutAsJSON(stdout, data, ctx)
+	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
 }
 
 func (controller *MigrationsController) Pending(ctx *gin.Context) {
 	args := []string{"show", "pending"}
+	flags := ctx.MustGet("command_flags").([]string)
 
-	stdout, stderr, exited := controller.CallCommand(args, ctx.MustGet("command_flags").([]string))
-	data := APIMigrations{}
+	response, err := StatelessExecutionStrategy(args, flags)
 
-	if controller.HandleCommandErrors(stdout, stderr, exited, ctx) {
+	if err != nil {
+		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
 		return
 	}
 
-	controller.ParseStdoutAsJSON(stdout, data, ctx)
+	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
 }
 
 // MARK: - Stateful Operations (will affect the state of the database)
 // ------------------------------------------------------------------
 
 func (controller *MigrationsController) Migrate(ctx *gin.Context) {
-	args := []string{"migrate"}
-
 	var requestBody RequestBody
-
 	_ = ctx.BindJSON(&requestBody)
 
-	response := []APIMessage{}
-	stdout, stderr, exited := controller.CallCommand(args, append(ctx.MustGet("command_flags").([]string), requestBody.Migration))
+	args := []string{"migrate"}
+	flags := append(ctx.MustGet("command_flags").([]string), requestBody.Migration)
 
-	if controller.HandleCommandErrors(stdout, stderr, exited, ctx) {
+	response, err := StatefulExecutionStrategy(args, flags)
+
+	if err != nil {
+		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
 		return
 	}
 
-	controller.HandleStdout(stdout, response, ctx, 202)
+	ctx.IndentedJSON(STATEFUL_SUCCESS_STATUS_CODE, response)
 }
 
 func (controller *MigrationsController) Rollback(ctx *gin.Context) {
-	args := []string{"rollback"}
-
 	var requestBody RequestBody
-
 	_ = ctx.BindJSON(&requestBody)
 
-	response := []APIMessage{}
-	stdout, stderr, exited := controller.CallCommand(args, append(ctx.MustGet("command_flags").([]string), requestBody.Migration))
+	args := []string{"rollback"}
+	flags := append(ctx.MustGet("command_flags").([]string), requestBody.Migration)
 
-	if controller.HandleCommandErrors(stdout, stderr, exited, ctx) {
+	response, err := StatefulExecutionStrategy(args, flags)
+
+	if err != nil {
+		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
 		return
 	}
 
-	controller.HandleStdout(stdout, response, ctx, 202)
-}
-
-// MARK: - Helpers
-// ------------------------------------------------------------------
-
-func (*MigrationsController) ParseStdoutAsJSON(stdout bytes.Buffer, data APIMigrations, ctx *gin.Context) {
-	err := json.Unmarshal(stdout.Bytes(), &data.Migrations)
-
-	if err != nil {
-		log.Println("Error: unable to parse stdout as JSON")
-		ctx.AbortWithStatusJSON(500, err)
-	}
-
-	data.Count = data.Migrations.Len()
-
-	ctx.AbortWithStatusJSON(200, data)
+	ctx.IndentedJSON(STATEFUL_SUCCESS_STATUS_CODE, response)
 }

@@ -145,19 +145,26 @@ Available Commands:
 ## API (experimental feature)
 Beginning in version 2.0.0, the CLI now features a server that exposes some of its functionality as RESTful endpoints. 
 
+The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`.
+
+You can also specify both an `API_VERSION` and an `API_NAMESPACE` to configure the API endpoints.
+
+The default values are:
+
+`API_VERSION` = `v1`
+`API_NAMESPACE` = `migrations`
+
 **Endpoints**
 ```
-GET /
-GET /health
-GET /migrations
-GET /migrations/applied
-GET /migrations/pending
+GET /${API_VERSION}
+GET /${API_VERSION}/health
+GET /${API_VERSION}/${API_NAMESPACE}
+GET /${API_VERSION}/${API_NAMESPACE}/applied
+GET /${API_VERSION}/${API_NAMESPACE}/pending
 
-POST /migrations/migrate
-POST /migrations/rollback
+POST /${API_VERSION}/${API_NAMESPACE}/migrate
+POST /${API_VERSION}/${API_NAMESPACE}/rollback
 ```
-
-The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`.
 
 
 ## To Do
