@@ -54,7 +54,7 @@ func (V *MigratorVersion) Description() string {
 	return fmt.Sprintf("%v (%v).\nApplied at: %v", V.Version, V.Name, V.CreatedAt)
 }
 
-func (M *Migration) Description() string {
+func (M Migration) Description() string {
 	return fmt.Sprintf("Version: %v (%v)", M.Version, M.Name)
 }
 

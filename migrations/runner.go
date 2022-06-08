@@ -43,7 +43,7 @@ func (runner *Runner) LogError(err string) {
 
 func (runner *Runner) LogInfo(info string) {
 	message := logger.ApplicationMessage{Message: info}
-	runner.logger.WithFormattedOutput(&message, os.Stderr)
+	runner.logger.WithFormattedOutput(&message, os.Stdout)
 }
 
 func (runner *Runner) SetLogger(format, template string) {
@@ -413,7 +413,7 @@ func (runner *Runner) registerMigration(migration Migration, table string) error
 		return err
 	}
 
-	runner.logger.CacheMessage(fmt.Sprintf("Added version: %v. Name: %s", migration.Version, migration.Name))
+	runner.logger.CacheMessage(migration)
 	return nil
 }
 
@@ -428,6 +428,6 @@ func (runner *Runner) removeMigrationFromSchema(migration Migration, table strin
 		return err
 	}
 
-	runner.logger.CacheMessage(fmt.Sprintf("Removed version: %v, Name: %s", migration.Version, migration.Name))
+	runner.logger.CacheMessage(migration)
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 
 type Logger struct {
 	config         formatter.Config
-	cachedMessages []ApplicationMessage
+	cachedMessages []Formattable
 }
 
 type Formattable interface {
@@ -27,8 +27,8 @@ type ApplicationError struct {
 	Error string `json:"error" yaml:"error"`
 }
 
-func (l *Logger) CacheMessage(message string) {
-	l.cachedMessages = append(l.cachedMessages, ApplicationMessage{Message: message})
+func (l *Logger) CacheMessage(message Formattable /*, ioWritter io.Writer*/) {
+	l.cachedMessages = append(l.cachedMessages, message)
 }
 
 func (l Logger) WithFormattedOutput(data Formattable, ioWriter io.Writer) {
@@ -53,7 +53,7 @@ func (l *Logger) ReleaseCachedMessages(ioWriter io.Writer) {
 		messages := []string{}
 
 		for _, m := range l.cachedMessages {
-			messages = append(messages, m.Message)
+			messages = append(messages, m.Description())
 		}
 
 		fmt.Fprintln(ioWriter, strings.Join(messages, "\n"))
