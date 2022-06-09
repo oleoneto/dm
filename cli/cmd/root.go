@@ -62,6 +62,10 @@ func overrideVariablesFromEnvironment() {
 	if vp := os.Getenv("API_VERSION"); vp != "" {
 		apiVersionPrefix = vp
 	}
+
+	if ah := os.Getenv("ALLOWED_HOST"); ah != "" {
+		apiHost = ah
+	}
 }
 
 func validateDatabaseConfig() {

@@ -14,8 +14,9 @@ var (
 	serverPort         = 3809
 	apiNamespacePrefix = "migrations"
 	apiVersionPrefix   = "v1"
-	apiConfig          = c.DMConfig{}
+	apiConfig          = c.APIConfig{}
 	apiDebugMode       = false
+	apiHost            = "*"
 
 	apiCmd = &cobra.Command{
 		Use:   "api",
@@ -24,17 +25,21 @@ var (
 			validateDatabaseConfig()
 			overrideVariablesFromEnvironment()
 
-			apiConfig = c.DMConfig{
+			apiConfig = c.APIConfig{
+				AllowedHost:      apiHost,
 				ConnectionString: databaseUrl,
-				Table:            table,
+				DebugMode:        apiDebugMode,
 				Directory:        directory,
+				Namespace:        apiNamespacePrefix,
+				Table:            table,
+				Version:          apiVersionPrefix,
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
 			fmt.Println("⚡️ Server running on port", serverPort)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			app := server.API(apiVersionPrefix, apiNamespacePrefix, apiDebugMode, apiConfig)
+			app := server.API(apiConfig)
 			err := app.Run(fmt.Sprintf(":%v", serverPort))
 
 			if err != nil {
@@ -50,7 +55,7 @@ func init() {
 	apiCmd.PersistentFlags().StringVarP(&databaseUrl, "database-url", "u", databaseUrl, "database url")
 	apiCmd.PersistentFlags().IntVarP(&serverPort, "port", "p", serverPort, "server port")
 	apiCmd.PersistentFlags().StringVarP(&apiVersionPrefix, "version", "v", apiVersionPrefix, "api version param")
-	apiCmd.PersistentFlags().StringVarP(&apiNamespacePrefix, "namespace", "n", apiNamespacePrefix, "api resource namespace param")
+	apiCmd.PersistentFlags().StringVar(&apiHost, "hosts", apiHost, "allowed CORS origins")
 	apiCmd.PersistentFlags().BoolVar(&apiDebugMode, "debug", apiDebugMode, "shows server debug output")
 
 	apiCmd.MarkFlagRequired("database-url")

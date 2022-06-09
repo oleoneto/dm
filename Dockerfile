@@ -1,7 +1,7 @@
+# The origin for which the server will accept CORS requests
+ARG ALLOWED_HOST
 # The version parameter in the url. (i.e v1)
 ARG API_VERSION
-# The namespace of the migrations resources.(i.e migrations)
-ARG API_NAMESPACE
 # The connection string to the database. (i.e postgres://<username>:<password>@host:5432/database)
 ARG DATABASE_URL
 # The directory where the migrator should look for migration fiels. (i.e migrations or ./)
@@ -26,14 +26,13 @@ RUN \
 
 FROM alpine
 
+ARG ALLOWED_HOST
 ARG API_VERSION
-ARG API_NAMESPACE
 ARG DATABASE_URL
 ARG MIGRATIONS_DIRECTORY
 ARG MIGRATIONS_TABLE
 
 ENV API_VERSION=${API_VERSION}
-ENV API_NAMESPACE=${API_NAMESPACE}
 ENV DATABASE_URL=${DATABASE_URL}
 ENV MIGRATIONS_DIRECTORY=${MIGRATIONS_DIRECTORY}
 ENV MIGRATIONS_TABLE=${MIGRATIONS_TABLE}
