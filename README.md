@@ -159,25 +159,27 @@ Flags:
   -u, --database-url string   database url (default "postgres://****:**@**:5432/******")
       --debug                 shows server debug output
   -h, --help                  help for api
-  -n, --namespace string      api resource namespace param (default "migrations")
+      --host string           allowed CORS origin (default "*")
   -p, --port int              server port (default 3809)
   -v, --version string        api version param (default "v1")
 ```
 
 The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. 
 These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`. 
-You can also specify both an `API_VERSION` and an `API_NAMESPACE` to configure the API endpoints.
+You can also specify an `API_VERSION` to configure the API endpoints.
 
 **Endpoints**
 ```
-GET /${API_VERSION}
-GET /${API_VERSION}/health
-GET /${API_VERSION}/${API_NAMESPACE}
-GET /${API_VERSION}/${API_NAMESPACE}/applied
-GET /${API_VERSION}/${API_NAMESPACE}/pending
+GET     /${API_VERSION}
+GET     /${API_VERSION}/docs
+GET     /${API_VERSION}/health
 
-POST /${API_VERSION}/${API_NAMESPACE}/migrate
-POST /${API_VERSION}/${API_NAMESPACE}/rollback
+GET     /${API_VERSION}/migrations
+POST    /${API_VERSION}/migrations
+DELETE  /${API_VERSION}/migrations
+GET     /${API_VERSION}/migrations/applied
+GET     /${API_VERSION}/migrations/pending
+
 ```
 
 

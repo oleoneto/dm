@@ -20,6 +20,10 @@ func (StaticController) Ping(ctx *gin.Context) {
 	ctx.IndentedJSON(200, message)
 }
 
+func (StaticController) Documentation(ctx *gin.Context) {
+	ctx.HTML(config.SUCCESS, "swagger.html", nil)
+}
+
 func (controller *StaticController) Health(ctx *gin.Context) {
 	args := []string{"show", "pending"}
 	flags := ctx.MustGet("command_flags").([]string)

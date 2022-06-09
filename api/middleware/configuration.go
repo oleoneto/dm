@@ -9,7 +9,7 @@ type ErrorResponse struct {
 	Errors []string
 }
 
-func ConfigurationMiddleware(configuration config.DMConfig) gin.HandlerFunc {
+func ConfigurationMiddleware(configuration config.APIConfig) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		errors, isValid := configuration.IsValid()
 

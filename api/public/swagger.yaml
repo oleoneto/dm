@@ -1,0 +1,168 @@
+swagger: "2.0"
+info:
+  description: "This API is used to monitor and apply migrations"
+  version: "1.0.0"
+  title: "Database Migrator"
+  contact:
+    email: "hello@example.com"
+host: "localhost:3809"
+basePath: "/v1"
+tags:
+- name: "migrations"
+  description: "Database migrations"
+schemes:
+- "http"
+- "https"
+paths:
+  /:
+   get:
+      tags:
+        - "system"
+      summary: "Shows if the API is operational"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          $ref: "#/responses/200"
+        "500":
+          $ref: "#/responses/500"
+  /health:
+    get:
+      tags:
+        - "migrations"
+      summary: "Retuns the current status of all migrations"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          $ref: "#/responses/200"
+        "500":
+          $ref: "#/responses/500"
+  /migrations:
+    get:
+      tags:
+        - "migrations"
+      summary: "Returns all migrations"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          $ref: "#/responses/200"
+        "500":
+          $ref: "#/responses/500"
+    post:
+      tags:
+      - "migrations"
+      summary: "Run pending migrations"
+      description: "Runs all pending migrations or all migrations up-to a given version"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Migration name or version"
+        required: false
+        schema:
+          properties:
+            name:
+              type: "string"
+              example: "CreateItems"
+      responses:
+        "200":
+          $ref: "#/responses/200"
+        "202":
+          $ref: "#/responses/202"
+        "500":
+          $ref: "#/responses/500"
+    delete:
+      tags:
+      - "migrations"
+      summary: "Run rollback of applied migrations"
+      description: "Runs rollback on all applied migrations or all migrations up-to a given version"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Migration name or version"
+        required: false
+        schema:
+          properties:
+            name:
+              type: "string"
+              example: "CreateItems"
+      responses:
+        "200":
+          $ref: "#/responses/200"
+        "202":
+          $ref: "#/responses/202"
+        "500":
+          $ref: "#/responses/500"
+  /migrations/applied:
+    get:
+      tags:
+        - "migrations"
+      summary: "Returns all applied migrations"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          $ref: "#/responses/200"
+        "500":
+          $ref: "#/responses/500"
+  /migrations/pending:
+    get:
+      tags:
+        - "migrations"
+      summary: "Returns all pending migrations"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          $ref: "#/responses/200"
+        "500":
+          $ref: "#/responses/500"
+definitions:
+  Migration:
+    type: object
+    properties:
+      name:
+        type: "string"
+        example: "CreateItems"
+      version:
+        type: "string"
+        example: "20221231054530129328"
+      fileName:
+        type: "string"
+        example: "20221231054530129328_create_items.yaml"
+  Error:
+    type: object
+    properties: 
+      error:
+        type: string
+  Message:
+    type: object
+    properties: 
+      message:
+        type: string
+responses:
+  "200":
+    description: "OK"
+    schema:
+      type: object
+      $ref: "#/definitions/Message"
+  "202":
+    description: "Accepted"
+    schema:
+      type: array
+      items:
+        $ref: "#/definitions/Migration"
+  "500":
+    description: "Internal Server Error"
+    schema:
+      type: object
+      $ref: "#/definitions/Error"
