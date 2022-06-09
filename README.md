@@ -28,18 +28,22 @@ Usage:
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
+  generate    Generate a database migration file in the migrations directory
   help        Help about any command
   migrate     Run migration(s)
   rollback    Rollback migration(s)
   show        Shows the state of applied and pending migrations
   validate    Validate the configuration of migration files
+  version     Shows the version of the CLI
 
 Flags:
-  -a, --adapter string     database adapter (default "postgresql")
-      --config string      config file
-  -d, --directory string   migrations directory (default "./migrations")
-  -h, --help               help for dm
-  -t, --table string       table wherein migrations are tracked (default "_migrations")
+  -a, --adapter string           database adapter (default "postgresql")
+      --config string            config file
+  -d, --directory string         migrations directory (default "./migrations")
+  -h, --help                     help for dm
+  -o, --output-format string     output format (default "plain")
+  -y, --output-template string   template (used when output format is 'gotemplate')
+  -t, --table string             table wherein migrations are tracked (default "_migrations")
 
 Use "dm [command] --help" for more information about a command.
 ```
@@ -160,7 +164,9 @@ Flags:
   -v, --version string        api version param (default "v1")
 ```
 
-The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`. You can also specify both an `API_VERSION` and an `API_NAMESPACE` to configure the API endpoints.
+The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. 
+These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`. 
+You can also specify both an `API_VERSION` and an `API_NAMESPACE` to configure the API endpoints.
 
 **Endpoints**
 ```
