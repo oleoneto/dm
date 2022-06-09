@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 
+	"github.com/cleopatrio/db-migrator-lib/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,7 +27,7 @@ func (controller *StaticController) Health(ctx *gin.Context) {
 	response, err := StatelessExecutionStrategy(args, flags)
 
 	if err != nil {
-		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
+		ctx.IndentedJSON(config.SERVER_ERROR, response)
 		return
 	}
 
@@ -35,14 +36,14 @@ func (controller *StaticController) Health(ctx *gin.Context) {
 	if castable {
 		// -- Unhealthy
 		if len(data.Migrations) != 0 {
-			ctx.IndentedJSON(ERROR_STATUS_CODE, APIError{Error: fmt.Sprintf("%v pending migrations", len(data.Migrations))})
+			ctx.IndentedJSON(config.SERVER_ERROR, APIError{Error: fmt.Sprintf("%v pending migrations", len(data.Migrations))})
 			return
 		}
 
 		// -- Healthy
-		ctx.IndentedJSON(SUCCESS_STATUS_CODE, APIMessage{Message: "No pending migrations"})
+		ctx.IndentedJSON(config.SUCCESS, APIMessage{Message: "No pending migrations"})
 		return
 	}
 
-	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
+	ctx.IndentedJSON(config.SUCCESS, response)
 }

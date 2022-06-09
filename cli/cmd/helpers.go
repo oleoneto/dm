@@ -7,6 +7,22 @@ import (
 	"github.com/cleopatrio/db-migrator-lib/logger"
 )
 
+type MessageOutput struct {
+	Message string
+}
+
+type ErrorOutput struct {
+	Error string
+}
+
+func (t MessageOutput) Description() string {
+	return t.Message
+}
+
+func (t ErrorOutput) Description() string {
+	return t.Error
+}
+
 type VersionFlag struct {
 	Value string
 	Type  string

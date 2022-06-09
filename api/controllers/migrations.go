@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/cleopatrio/db-migrator-lib/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,11 +23,11 @@ func (controller *MigrationsController) List(ctx *gin.Context) {
 	response, err := StatelessExecutionStrategy(args, flags)
 
 	if err != nil {
-		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
+		ctx.IndentedJSON(config.SERVER_ERROR, response)
 		return
 	}
 
-	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
+	ctx.IndentedJSON(config.SUCCESS, response)
 }
 
 func (controller *MigrationsController) Applied(ctx *gin.Context) {
@@ -36,11 +37,11 @@ func (controller *MigrationsController) Applied(ctx *gin.Context) {
 	response, err := StatelessExecutionStrategy(args, flags)
 
 	if err != nil {
-		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
+		ctx.IndentedJSON(config.SERVER_ERROR, response)
 		return
 	}
 
-	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
+	ctx.IndentedJSON(config.SUCCESS, response)
 }
 
 func (controller *MigrationsController) Pending(ctx *gin.Context) {
@@ -50,11 +51,11 @@ func (controller *MigrationsController) Pending(ctx *gin.Context) {
 	response, err := StatelessExecutionStrategy(args, flags)
 
 	if err != nil {
-		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
+		ctx.IndentedJSON(config.SERVER_ERROR, response)
 		return
 	}
 
-	ctx.IndentedJSON(SUCCESS_STATUS_CODE, response)
+	ctx.IndentedJSON(config.SUCCESS, response)
 }
 
 // MARK: - Stateful Operations (will affect the state of the database)
@@ -62,7 +63,7 @@ func (controller *MigrationsController) Pending(ctx *gin.Context) {
 
 func (controller *MigrationsController) Migrate(ctx *gin.Context) {
 	var requestBody RequestBody
-	_ = ctx.BindJSON(&requestBody)
+	_ = ctx.Bind(&requestBody)
 
 	args := []string{"migrate"}
 	flags := append(ctx.MustGet("command_flags").([]string), requestBody.Migration)
@@ -70,16 +71,16 @@ func (controller *MigrationsController) Migrate(ctx *gin.Context) {
 	response, err := StatefulExecutionStrategy(args, flags)
 
 	if err != nil {
-		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
+		ctx.IndentedJSON(config.SERVER_ERROR, response)
 		return
 	}
 
-	ctx.IndentedJSON(STATEFUL_SUCCESS_STATUS_CODE, response)
+	ctx.IndentedJSON(config.ACCEPTED, response)
 }
 
 func (controller *MigrationsController) Rollback(ctx *gin.Context) {
 	var requestBody RequestBody
-	_ = ctx.BindJSON(&requestBody)
+	_ = ctx.Bind(&requestBody)
 
 	args := []string{"rollback"}
 	flags := append(ctx.MustGet("command_flags").([]string), requestBody.Migration)
@@ -87,9 +88,9 @@ func (controller *MigrationsController) Rollback(ctx *gin.Context) {
 	response, err := StatefulExecutionStrategy(args, flags)
 
 	if err != nil {
-		ctx.IndentedJSON(ERROR_STATUS_CODE, response)
+		ctx.IndentedJSON(config.SERVER_ERROR, response)
 		return
 	}
 
-	ctx.IndentedJSON(STATEFUL_SUCCESS_STATUS_CODE, response)
+	ctx.IndentedJSON(config.ACCEPTED, response)
 }
