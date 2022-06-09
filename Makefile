@@ -1,6 +1,5 @@
-API_NAME = dm-api
 GOBIN := $(GOPATH)/bin
-IMAGE_NAME = migration-api
+IMAGE_NAME = dm
 LIB_NAME = db-migrator-lib
 TARGET_FILE = dm
 
@@ -10,6 +9,9 @@ clean:
 clean-test:
 	@go fmt ./...
 	@go clean -testcache
+
+clean-docker:
+	docker rmi $(IMAGE_NAME)
 
 build-deps:
 	@go mod tidy
@@ -23,17 +25,13 @@ build: build-deps test
 build-for-docker:
 	@go build -o $(TARGET_FILE)
 
-build-api:
-	cd api; go build -o $(API_NAME); mv $(API_NAME) ../
-
 install: build
 	@go env -w GOBIN=$(GOBIN)
 	@go install
 	@mv $(GOBIN)/$(LIB_NAME)  $(GOBIN)/$(TARGET_FILE)
 
-install-api: build-api
-	@go env -w GOBIN=$(GOBIN)
-	@go install
-
 docker:
 	docker build . -t $(IMAGE_NAME)
+
+run-docker:
+	@docker run --name $(IMAGE_NAME) -it --rm -p 3809:3809 -e DATABASE_URL=${DATABASE_URL} -v ${PWD}/examples:/app/migrations $(IMAGE_NAME)

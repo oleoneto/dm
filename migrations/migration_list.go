@@ -179,7 +179,7 @@ func (List *MigrationList) ToSlice() Migrations {
 
 func (List *MigrationList) Description() string {
 	if List.size == 0 {
-		return "No migrations."
+		return "No migrations in list."
 	}
 
 	return fmt.Sprintf("%v migrations", List.size)

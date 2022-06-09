@@ -13,8 +13,8 @@ import (
 var (
 	config       string
 	runner       = migrations.Runner{}
-	storeAdapter migrations.Store
 	directory    = "./migrations"
+	storeAdapter migrations.Store
 	adapter      = "postgresql"
 	databaseUrl  = os.Getenv("DATABASE_URL")
 	table        = "_migrations"
@@ -44,6 +44,24 @@ var (
 
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+func overrideVariablesFromEnvironment() {
+	if md := os.Getenv("MIGRATIONS_DIRECTORY"); md != "" {
+		directory = md
+	}
+
+	if mt := os.Getenv("MIGRATIONS_TABLE"); mt != "" {
+		table = mt
+	}
+
+	if np := os.Getenv("API_NAMESPACE"); np != "" {
+		apiNamespacePrefix = np
+	}
+
+	if vp := os.Getenv("API_VERSION"); vp != "" {
+		apiVersionPrefix = vp
+	}
 }
 
 func validateDatabaseConfig() {
@@ -89,6 +107,7 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(cliVersionCmd)
+	rootCmd.AddCommand(apiCmd)
 
 	// Runner configuration
 	// These changes can be overridden by validateDatabaseConfig()

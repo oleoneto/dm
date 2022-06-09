@@ -6,6 +6,7 @@ import (
 
 	"github.com/cleopatrio/db-migrator-lib/api/controllers"
 	"github.com/cleopatrio/db-migrator-lib/api/middleware"
+	"github.com/cleopatrio/db-migrator-lib/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,16 +28,20 @@ POST /${API_VERSION}/${API_NAMESPACE}/migrate
 POST /${API_VERSION}/${API_NAMESPACE}/rollback
 */
 
-func API(version, namespace string) *gin.Engine {
-	gin.SetMode(gin.ReleaseMode)
+func API(version, namespace string, debugMode bool, configuration config.DMConfig) *gin.Engine {
+	if debugMode {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	app := gin.Default()
 
 	app.GET("/", staticController.Ping)
 
 	versionedGroup := app.Group(fmt.Sprintf("/%v", sanitized(version)))
-	healthGroup := versionedGroup.Group("/health").Use(middleware.ConfigurationMiddleware())
-	namespacedGroup := versionedGroup.Group(fmt.Sprintf("/%v", sanitized(namespace))).Use(middleware.ConfigurationMiddleware())
+	healthGroup := versionedGroup.Group("/health").Use(middleware.ConfigurationMiddleware(configuration))
+	namespacedGroup := versionedGroup.Group(fmt.Sprintf("/%v", sanitized(namespace))).Use(middleware.ConfigurationMiddleware(configuration))
 
 	{
 		versionedGroup.GET("/", staticController.Ping)

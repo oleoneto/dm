@@ -34,12 +34,6 @@ type APIError struct {
 	Error string `json:"error"`
 }
 
-var (
-	ERROR_STATUS_CODE            = 500
-	SUCCESS_STATUS_CODE          = 200
-	STATEFUL_SUCCESS_STATUS_CODE = 202
-)
-
 func StatelessExecutionStrategy(args, flags []string) (interface{}, error) {
 
 	stdout, stderr, exited := CallCommand(args, flags)
@@ -62,7 +56,14 @@ func StatefulExecutionStrategy(args, flags []string) (interface{}, error) {
 	outbuf, hasErrors := CheckForCommandErrors(stdout, stderr, exited)
 
 	if hasErrors {
-		return APIError{Error: outbuf.String()}, errors.New(outbuf.String())
+		var response APIError
+		err := json.Unmarshal(outbuf.Bytes(), &response)
+
+		if err != nil {
+			return APIError{Error: outbuf.String()}, errors.New(outbuf.String())
+		}
+
+		return response, err
 	}
 
 	data, err := ParseStdoutAsJSON(outbuf)

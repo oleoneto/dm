@@ -12,7 +12,7 @@ A database migration tool.
     - [Generate](#generate)
     - [Validate](#validate)
     - [Show](#show)
-  - [API (experimental feature)](#api-experimental-feature)
+    - [API](#api)
   - [To Do](#to-do)
 
 ## Commands
@@ -146,18 +146,27 @@ Available Commands:
   version     Shows the most recently applied migration
 ```
 
-## API (experimental feature)
-Beginning in version 2.0.0, the CLI now features a server that exposes some of its functionality as RESTful endpoints. 
+### API
+Beginning in version v2.0.0, the CLI now features a server that exposes some of its functionality as RESTful endpoints. 
 
-The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`.
+```
+Run a RESTful API
 
+Usage:
+  dm api [flags]
+
+Flags:
+  -u, --database-url string   database url (default "postgres://****:**@**:5432/******")
+      --debug                 shows server debug output
+  -h, --help                  help for api
+  -n, --namespace string      api resource namespace param (default "migrations")
+  -p, --port int              server port (default 3809)
+  -v, --version string        api version param (default "v1")
+```
+
+The API server requires you to set three variables: `DATABASE_URL`, `MIGRATIONS_DIRECTORY`, and `MIGRATIONS_TABLE`. 
+These can be set via environment variables or by setting their respective flags in the server executable. The default server port is `3809`. 
 You can also specify both an `API_VERSION` and an `API_NAMESPACE` to configure the API endpoints.
-
-The default values are:
-
-- `API_VERSION` = `v1`
-
-- `API_NAMESPACE` = `migrations`
 
 **Endpoints**
 ```
