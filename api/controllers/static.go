@@ -21,7 +21,7 @@ func (StaticController) Ping(ctx *gin.Context) {
 }
 
 func (StaticController) Documentation(ctx *gin.Context) {
-	ctx.HTML(config.SUCCESS, "swagger.html", nil)
+	ctx.HTML(config.SUCCESS, "swagger.html", gin.H{"title": "Database Migrator"})
 }
 
 func (controller *StaticController) Health(ctx *gin.Context) {
