@@ -4,7 +4,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/cleopatrio/db-migrator-lib/logger"
+	"github.com/oleoneto/dm/logger"
 )
 
 type MessageOutput struct {

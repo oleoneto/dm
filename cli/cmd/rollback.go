@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/iancoleman/strcase"
+	"github.com/oleoneto/dm/logger"
 	"github.com/spf13/cobra"
 )
 

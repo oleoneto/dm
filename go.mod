@@ -1,4 +1,4 @@
-module github.com/cleopatrio/db-migrator-lib
+module github.com/oleoneto/dm
 
 go 1.18
 

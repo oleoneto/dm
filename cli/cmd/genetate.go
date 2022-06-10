@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cleopatrio/db-migrator-lib/logger"
-	"github.com/cleopatrio/db-migrator-lib/migrations"
 	"github.com/iancoleman/strcase"
+	"github.com/oleoneto/dm/logger"
+	"github.com/oleoneto/dm/migrations"
 	"github.com/spf13/cobra"
 )
 

@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/cleopatrio/db-migrator-lib/config"
 	"github.com/gin-gonic/gin"
+	"github.com/oleoneto/dm/config"
 )
 
 type StaticController struct {

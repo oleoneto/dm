@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/cleopatrio/db-migrator-lib/config"
 	"github.com/gin-gonic/gin"
+	"github.com/oleoneto/dm/config"
 )
 
 type ErrorResponse struct {

@@ -1,7 +1,7 @@
 # Database Migrator, DM
 A database migration tool.
 
-[![Build and Test](https://github.com/cleopatrio/db-migrator-lib/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/cleopatrio/db-migrator-lib/actions/workflows/go.yml)
+[![Build and Test](https://github.com/oleoneto/dm/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/oleoneto/dm/actions/workflows/go.yml)
 
 **Table of Contents**
 - [Database Migrator, DM](#database-migrator-dm)
@@ -184,4 +184,4 @@ GET     /${API_VERSION}/migrations/pending
 
 
 ## To Do
-[Check out open issues](https://github.com/cleopatrio/db-migrator-lib/issues).
+[Check out open issues](https://github.com/oleoneto/dm/issues).

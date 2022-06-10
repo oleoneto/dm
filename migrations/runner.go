@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cleopatrio/db-migrator-lib/logger"
 	"github.com/iancoleman/strcase"
+	"github.com/oleoneto/dm/logger"
 	"gopkg.in/yaml.v2"
 )
 

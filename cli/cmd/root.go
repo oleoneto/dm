@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cleopatrio/db-migrator-lib/logger"
-	"github.com/cleopatrio/db-migrator-lib/migrations"
-	"github.com/cleopatrio/db-migrator-lib/stores"
+	"github.com/oleoneto/dm/logger"
+	"github.com/oleoneto/dm/migrations"
+	"github.com/oleoneto/dm/stores"
 	"github.com/spf13/cobra"
 )
 

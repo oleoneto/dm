@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cleopatrio/db-migrator-lib/api/controllers"
-	"github.com/cleopatrio/db-migrator-lib/api/middleware"
-	"github.com/cleopatrio/db-migrator-lib/config"
 	"github.com/gin-gonic/gin"
+	"github.com/oleoneto/dm/api/controllers"
+	"github.com/oleoneto/dm/api/middleware"
+	"github.com/oleoneto/dm/config"
 )
 
 var (

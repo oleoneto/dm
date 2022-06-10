@@ -1,7 +1,7 @@
 package main
 
 import (
-	cli "github.com/cleopatrio/db-migrator-lib/cli/cmd"
+	cli "github.com/oleoneto/dm/cli/cmd"
 )
 
 func main() {
