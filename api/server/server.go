@@ -1,7 +1,10 @@
 package server
 
 import (
+	"embed"
 	"fmt"
+	"html/template"
+	"io/fs"
 	"net/http"
 	"strings"
 
@@ -14,6 +17,12 @@ import (
 var (
 	staticController     = controllers.StaticController{}
 	migrationsController = controllers.MigrationsController{}
+
+	//go:embed public/*
+	assets embed.FS
+
+	//go:embed templates/*
+	templates embed.FS
 )
 
 /*
@@ -42,9 +51,8 @@ func API(conf config.APIConfig) *gin.Engine {
 	app.Use(middleware.CorsHeaders(conf.AllowedHost))
 
 	// Static File Handling
-	app.LoadHTMLGlob("./api/public/*.html")
-	app.StaticFS("/static", http.Dir("./api/public/static"))
-	app.StaticFile("/swagger.yaml", "./api/public/swagger.yaml")
+	loadHTMLFromFS(app, templates, "templates/*")
+	app.StaticFS("static", assetsFS(assets))
 
 	app.GET("/", staticController.Ping)
 
@@ -71,4 +79,21 @@ func sanitized(value string) string {
 	result = strings.TrimPrefix(result, "/")
 	result = strings.TrimSuffix(result, "/")
 	return result
+}
+
+// Source: https://github.com/gin-gonic/gin/issues/2795
+func loadHTMLFromFS(engine *gin.Engine, embedFS embed.FS, pattern string) {
+	templ := template.Must(template.ParseFS(embedFS, pattern))
+	engine.SetHTMLTemplate(templ)
+}
+
+// Source: https://dev.to/fareez/embedding-a-react-application-in-go-binary-188n
+func assetsFS(embed embed.FS) http.FileSystem {
+	fsystem, err := fs.Sub(embed, "public")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return http.FS(fsystem)
 }
