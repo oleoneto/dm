@@ -88,7 +88,7 @@ func Validate(migrations MigrationList) (bool, string) {
 		}
 
 		for _, change := range migration.Changes.Up {
-			if len(strings.Split(change, " ")) < 5 {
+			if len(strings.Split(change, " ")) < 3 {
 				return invalidMigration(*migration, "missing (or invalid) migrate instruction")
 			}
 

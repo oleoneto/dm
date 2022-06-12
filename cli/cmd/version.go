@@ -10,5 +10,5 @@ func (v Version) Description() string {
 }
 
 var version = Version{
-	Version: "3.0.1",
+	Version: "3.0.2",
 }
