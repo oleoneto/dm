@@ -7,8 +7,7 @@ require (
 	github.com/georgysavva/scany v0.3.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/iancoleman/strcase v0.2.0
-	github.com/jackc/pgx/v4 v4.16.0
-	github.com/mattn/go-sqlite3 v1.14.6
+	github.com/jackc/pgx/v4 v4.16.1
 	github.com/spf13/cobra v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -21,7 +20,7 @@ require (
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.12.0 // indirect
+	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
