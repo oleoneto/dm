@@ -99,7 +99,7 @@ func IsEmpty(store Store, schemaTable string) bool {
 		return false
 	}
 
-	return count != 0
+	return count == 0
 }
 
 func IsUpToDate(store Store, schemaTable string, migrations MigrationList) bool {
@@ -158,7 +158,7 @@ func StopTracking(store Store, schemaTable string) bool {
 
 	err := store.Delete(DropMigrationTable(schemaTable))
 
-	return err != nil
+	return err == nil
 }
 
 // MARK: - Migration Runner

@@ -1,19 +1,14 @@
 package migrations
 
 import (
-	"log"
 	"os"
 	"testing"
 
 	"github.com/oleoneto/dm/stores"
 )
 
-var (
-	emptyStore        = ExampleStore{}
-	testPostgresStore = stores.Postgres{URL: os.Getenv("DATABASE_URL")}
-)
+var testPostgresStore = stores.Postgres{URL: os.Getenv("DATABASE_URL")}
 
-// TestMain will exec each test, one by one
 func TestMain(m *testing.M) {
 	setUp()
 
@@ -25,13 +20,16 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
-	log.Println("Creating public schema")
-	testPostgresStore.Delete("DROP SCHEMA public CASCADE;")
-	testPostgresStore.Delete("CREATE SCHEMA public;")
+	rebuildDatabaseSchema()
 }
 
 func tearDown() {
-	log.Println("Dropping public schema")
+	rebuildDatabaseSchema()
+}
+
+func rebuildDatabaseSchema() {
+	testPostgresStore.Delete("DROP SCHEMA public CASCADE;")
+	testPostgresStore.Delete("CREATE SCHEMA public;")
 }
 
 func testRunner() Runner {
@@ -46,17 +44,34 @@ func testRunner() Runner {
 func TestStoreIsEmpty(t *testing.T) {
 	table := "schema_migrations"
 
-	empty := IsEmpty(emptyStore, table)
+	// Scenario 1: An empty store without migrations
+	empty := IsEmpty(testPostgresStore, table)
 
 	if !empty {
 		t.Fatalf(`wanted empty, but got %v`, empty)
 	}
+
+	// Scenario 2: A non-empty store with migrations
+	table = "test_migrations"
+	runner := testRunner()
+	runner.schemaTable = table
+	runner.store = testPostgresStore
+
+	runner.Up(defaultList())
+
+	empty = IsEmpty(testPostgresStore, table)
+
+	if empty {
+		t.Fatalf(`wanted non empty, but got %v`, empty)
+	}
+
+	t.Cleanup(rebuildDatabaseSchema)
 }
 
 func TestStoreIsTracked(t *testing.T) {
 	table := "schema_migrations"
 
-	tracked := IsTracked(emptyStore, table)
+	tracked := IsTracked(testPostgresStore, table)
 
 	if tracked {
 		t.Fatalf(`wanted tracked == false, but got %v`, tracked)
@@ -64,57 +79,85 @@ func TestStoreIsTracked(t *testing.T) {
 }
 
 func TestStoreVersion(t *testing.T) {
+	// Scenario 1: Empty store. Not tracked.
 	table := "schema_migrations"
 
-	version, tracked := Version(emptyStore, table)
+	version, tracked := Version(testPostgresStore, table)
 
 	if version.Version != "" || tracked {
 		t.Fatalf(`wanted version == "0" && tracked == false, but got (%v, %v)`, version.Version, tracked)
 	}
+
+	// Scenario 2: Non-empty store. Tracked.
+	runner := testRunner()
+	runner.schemaTable = table
+	runner.store = testPostgresStore
+
+	list := defaultList()
+
+	runner.Up(list)
+
+	version, tracked = Version(testPostgresStore, table)
+
+	if version.Version != list.tail.Version || !tracked {
+		t.Errorf(`wanted version == list.tail.version and tracked = true, but got (%v, %v)`, version.Version, tracked)
+	}
+
+	version, tracked = runner.Version()
+
+	if version.Version != list.tail.Version || !tracked {
+		t.Errorf(`wanted version == list.tail.version and tracked = true, but got (%v, %v)`, version.Version, tracked)
+	}
+
+	t.Cleanup(rebuildDatabaseSchema)
 }
 
 func TestStoreIsUpToDate(t *testing.T) {
 	table := "schema_migrations"
 
-	upToDate := IsUpToDate(emptyStore, table, defaultList())
+	upToDate := IsUpToDate(testPostgresStore, table, defaultList())
 
 	if upToDate {
 		t.Fatalf(`wanted upToDate == false, but got %v`, upToDate)
 	}
 }
 
-func TestStartTrackingStore(t *testing.T) {
+func TestStartAndStopTrackingStore(t *testing.T) {
 	table := "schema_migrations"
 
-	state := StartTracking(emptyStore, table)
+	// Start tracking
+	tracking := StartTracking(testPostgresStore, table)
 
-	if state {
-		t.Fatalf(`wanted state == false, but got %v`, state)
+	if !tracking {
+		t.Errorf(`wanted tracking == true, but got %v`, tracking)
 	}
-}
 
-func TestStopTrackingStore(t *testing.T) {
-	table := "schema_migrations"
+	// Stop tracking
+	stopped := StopTracking(testPostgresStore, table)
 
-	state := StopTracking(emptyStore, table)
-
-	// Empty store is not tracked. So, StopTracking should succeed.
-	if !state {
-		t.Fatalf(`wanted state == false, but got %v`, state)
+	if !stopped {
+		t.Errorf(`wanted stopped == true, but got %v`, stopped)
 	}
+
+	// Stop tracking
+	table = "unknown_migrations_table"
+
+	stopped = StopTracking(testPostgresStore, table)
+
+	if !stopped {
+		t.Errorf(`wanted stopped == true, but got %v`, stopped)
+	}
+
+	t.Cleanup(rebuildDatabaseSchema)
 }
 
 // =======================================
 // MARK: - Logger
 
-func TestRunnerLogError(t *testing.T) {
-}
-
-func TestRunnerLogInfo(t *testing.T) {
-}
-
-func TestRunnerSetLogger(t *testing.T) {
-}
+// TODO: Implement tests
+func TestRunnerLogError(t *testing.T)  {}
+func TestRunnerLogInfo(t *testing.T)   {}
+func TestRunnerSetLogger(t *testing.T) {}
 
 // =======================================
 // MARK: - Accessors
@@ -139,35 +182,22 @@ func TestRunnerStoreAccessors(t *testing.T) {
 	runner := Runner{}
 
 	// Set store
-	runner.SetStore(emptyStore)
+	runner.SetStore(testPostgresStore)
 
-	if runner.store != emptyStore {
-		t.Fatalf(`expected %v, but got %v`, emptyStore.Name(), runner.store.Name())
+	if runner.store != testPostgresStore {
+		t.Fatalf(`expected %v, but got %v`, testPostgresStore.Name(), runner.store.Name())
 	}
 
-	if runner.GetStore() != emptyStore {
-		t.Fatalf(`expected %v, but got %v`, emptyStore.Name(), runner.store.Name())
+	if runner.GetStore() != testPostgresStore {
+		t.Fatalf(`expected %v, but got %v`, testPostgresStore.Name(), runner.store.Name())
 	}
 
-	if runner.store.Name() != emptyStore.Name() {
-		t.Fatalf(`expected %v, but got %v`, emptyStore.Name(), runner.store.Name())
+	if runner.store.Name() != testPostgresStore.Name() {
+		t.Fatalf(`expected %v, but got %v`, testPostgresStore.Name(), runner.store.Name())
 	}
 }
 
-// MARK: - Postgres
-
-/*
-func TestRunnerBeforAction(t *testing.T) {
-	runner := Runner{}
-	runner.SetSchemaTable("dm_migrations")
-	runner.SetStore(emptyStore)
-
-	// FIXME: runner.beforeAction() is not testable
-	// Scenario 0: Succeed
-	// // Scenario 1: Exit if no table is provided
-	// // Scenario 2: Exit if no adapter is provided
-}
-*/
+// =======================================
 
 func TestRunnerPerformMigration(t *testing.T) {
 	runner := testRunner()
@@ -211,8 +241,7 @@ func TestRunnerPerformMigration(t *testing.T) {
 		}
 	}
 
-	// Cleanup
-	testPostgresStore.Delete(defaultMigrationList().head.Changes.Down[0])
+	t.Cleanup(rebuildDatabaseSchema)
 }
 
 func TestRunnerRegisterMigration(t *testing.T) {
@@ -241,6 +270,8 @@ func TestRunnerRegisterMigration(t *testing.T) {
 	if err == nil {
 		t.Errorf(`expected a database error, but got %v`, err)
 	}
+
+	t.Cleanup(rebuildDatabaseSchema)
 }
 
 func TestRunnerRemoveMigrationFromSchema(t *testing.T) {
@@ -262,6 +293,8 @@ func TestRunnerRemoveMigrationFromSchema(t *testing.T) {
 	if err == nil {
 		t.Errorf(`expected an error, but got %v`, err)
 	}
+
+	t.Cleanup(rebuildDatabaseSchema)
 }
 
 func TestRunnerAppliedMigrations(t *testing.T) {
@@ -276,4 +309,22 @@ func TestRunnerAppliedMigrations(t *testing.T) {
 	if migrations.Size() != 0 {
 		t.Errorf(`expected no migrations to have been applied, but got %v`, migrations.Size())
 	}
+
+	// TODO: Scenario 2: Unable to read migrations from the database
+	// TODO: Scenario 3: Applied migrations
+
+	t.Cleanup(rebuildDatabaseSchema)
 }
+
+func TestRunnerPendingMigrations(t *testing.T) {
+	// TODO: Scenario 1: No migration file found
+	// TODO: Scenario 2: Unable to read migrations from the database
+	// TODO: Scenario 3: Pending migrations
+}
+
+// TODO: Implement  tests
+func TestRunnerUp(t *testing.T) {}
+
+func TestRunnerDown(t *testing.T) {}
+
+func TestRunnerGenerate(t *testing.T) {}
