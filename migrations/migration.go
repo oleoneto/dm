@@ -84,7 +84,7 @@ func (m Migrations) Description() string {
 	descriptions := ""
 
 	if m.Len() == 0 {
-		return "No migrations."
+		return "No migrations"
 	}
 
 	for _, migration := range m {

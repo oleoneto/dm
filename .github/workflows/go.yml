@@ -6,8 +6,12 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:
+env:
+  DB_USER: postgres
+  DB_PASSWORD: password
+  DB_NAME: test
 
+jobs:
   build:
     runs-on: ubuntu-latest
 
@@ -15,10 +19,11 @@ jobs:
       postgres:
         image: postgres:12
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
+          POSTGRES_USER: ${{ env.DB_USER }}
+          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
+          POSTGRES_DB: ${{ env.DB_NAME }}
         ports:
-         - 5432:5432
+         - 5433:5432
         options: >-
           --mount type=tmpfs,destination=/var/lib/postgresql/data
           --health-cmd pg_isready
@@ -39,5 +44,5 @@ jobs:
 
     - name: Test
       env:
-        DATABASE_URL: 'postgres://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/test'
-      run: go test -v ./...
+        DATABASE_URL: 'postgres://${{ env.DB_USER }}:${{ env.DB_PASSWORD }}@localhost:5433/${{ env.DB_NAME }}'
+      run: go test -cover -v ./...
