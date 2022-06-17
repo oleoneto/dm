@@ -34,7 +34,7 @@ type Runner struct {
 	logger      logger.Logger
 }
 
-// MARK: Accessors
+// MARK: Logger
 
 func (runner *Runner) LogError(err string) {
 	message := logger.ApplicationError{Error: err}
@@ -45,6 +45,8 @@ func (runner *Runner) LogInfo(info string) {
 	message := logger.ApplicationMessage{Message: info}
 	runner.logger.WithFormattedOutput(&message, os.Stdout)
 }
+
+// MARK: Accessors
 
 func (runner *Runner) SetLogger(format, template string) {
 	runner.logger = logger.Custom(format, template)

@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"log"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -19,7 +18,6 @@ func (store *Postgres) Connect() error {
 	store.instance = conn
 
 	if err != nil || conn == nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
 		return err
 	}
 
