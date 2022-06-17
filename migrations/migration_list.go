@@ -95,27 +95,9 @@ func (List *MigrationList) Reverse() {
 	List.head = prev
 }
 
-// Display - Traverses list and prints all of its elements.
-func (List *MigrationList) Display() {
-	curr := List.head
-
-	for curr != nil {
-		format := fmt.Sprintf("%+v", curr.Name)
-		if curr.next != nil {
-			format += " -> "
-		}
-		fmt.Print(format)
-
-		curr = curr.next
-	}
-
-	fmt.Println()
-}
-
 // Find - Traverses the list in search for a given node.
-func (List *MigrationList) Find(identifier string) (MigrationList, bool) {
+func (List *MigrationList) Find(identifier string) (sequence MigrationList, isFound bool) {
 	curr := List.head
-	var sequence MigrationList
 
 	if curr == nil {
 		return sequence, false
@@ -139,7 +121,7 @@ func (List *MigrationList) Find(identifier string) (MigrationList, bool) {
 		curr = curr.next
 	}
 
-	return sequence, false
+	return MigrationList{}, false
 }
 
 // FromMap - Inserts map elements into the list.
@@ -179,7 +161,7 @@ func (List *MigrationList) ToSlice() Migrations {
 
 func (List *MigrationList) Description() string {
 	if List.size == 0 {
-		return "No migrations in list."
+		return "No migrations in list"
 	}
 
 	return fmt.Sprintf("%v migrations", List.size)

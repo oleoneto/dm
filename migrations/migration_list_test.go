@@ -1,6 +1,9 @@
 package migrations
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestGetHead(t *testing.T) {
 	list := MigrationList{}
@@ -168,6 +171,14 @@ func TestIsEmpty(t *testing.T) {
 	if list.size != 0 {
 		t.Fatalf(`wanted list.size == 0, got %v`, list.size)
 	}
+
+	if list.Size() != 0 {
+		t.Fatalf(`wanted list.Size() == 0, got %v`, list.Size())
+	}
+
+	if list.IsEmpty() != true {
+		t.Fatalf(`wanted list.IsEmpty() == true, got %v`, list.IsEmpty())
+	}
 }
 
 func TestSize(t *testing.T) {
@@ -210,6 +221,7 @@ func TestFindByVersion(t *testing.T) {
 func TestFindByName(t *testing.T) {
 	list := defaultList()
 
+	// Scenario 1: Search for an existing migration should return a non-empty sequence + true
 	sequence, found := list.Find("CreatePodcasts")
 
 	if !found {
@@ -218,6 +230,30 @@ func TestFindByName(t *testing.T) {
 
 	if sequence.size != 2 {
 		t.Fatalf(`wanted sequence.size == 2, but got %v`, sequence.size)
+	}
+
+	// Scenario 2: Search for a non-existing migration should return an empty sequence + false
+	sequence, found = list.Find("CreateUnknown")
+
+	if found {
+		t.Errorf(`wanted found = false, but got %v`, found)
+	}
+
+	if sequence.size != 0 {
+		t.Errorf(`wanted sequence.size == 0, but got %v`, sequence.size)
+	}
+
+	// Scenario 3: Search in an empty list should return an empty sequence + false
+	list = MigrationList{}
+
+	sequence, found = list.Find("CreatePodcasts")
+
+	if found {
+		t.Errorf(`wanted found = false, but got %v`, found)
+	}
+
+	if sequence.size != 0 {
+		t.Errorf(`wanted sequence.size == 0, but got %v`, sequence.size)
 	}
 }
 
@@ -251,7 +287,17 @@ func TestToSlice(t *testing.T) {
 }
 
 func TestReverse(t *testing.T) {
-	list := defaultList()
+	// Scenario 1: An empty list
+	list := MigrationList{}
+
+	list.Reverse()
+
+	if list.head != list.tail && list.head != nil {
+		t.Fatalf(`expected an empty list`)
+	}
+
+	// Scenario 2: A non-empty list
+	list = defaultList()
 
 	list.Reverse()
 
@@ -264,7 +310,24 @@ func TestReverse(t *testing.T) {
 	}
 }
 
-// MARK: -
+func TestMigrationListDescription(t *testing.T) {
+	// Scenario 1: An empty list
+	list := MigrationList{}
+
+	if list.Description() != "No migrations in list" {
+		t.Errorf(`expected a different description`)
+	}
+
+	// Scenario 2: A non-empty list
+	list = defaultList()
+	description := fmt.Sprintf("%v migrations", list.size)
+
+	if list.Description() != description {
+		t.Errorf(`expected a different description`)
+	}
+}
+
+// MARK: - Helpers
 
 func defaultList() MigrationList {
 	list := MigrationList{}

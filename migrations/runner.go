@@ -34,7 +34,7 @@ type Runner struct {
 	logger      logger.Logger
 }
 
-// MARK: Accessors
+// MARK: Logger
 
 func (runner *Runner) LogError(err string) {
 	message := logger.ApplicationError{Error: err}
@@ -45,6 +45,8 @@ func (runner *Runner) LogInfo(info string) {
 	message := logger.ApplicationMessage{Message: info}
 	runner.logger.WithFormattedOutput(&message, os.Stdout)
 }
+
+// MARK: Accessors
 
 func (runner *Runner) SetLogger(format, template string) {
 	runner.logger = logger.Custom(format, template)
@@ -97,7 +99,7 @@ func IsEmpty(store Store, schemaTable string) bool {
 		return false
 	}
 
-	return count != 0
+	return count == 0
 }
 
 func IsUpToDate(store Store, schemaTable string, migrations MigrationList) bool {
@@ -156,7 +158,7 @@ func StopTracking(store Store, schemaTable string) bool {
 
 	err := store.Delete(DropMigrationTable(schemaTable))
 
-	return err != nil
+	return err == nil
 }
 
 // MARK: - Migration Runner

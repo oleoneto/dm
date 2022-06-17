@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-var table = "schema_migrations"
-
 func TestSchemaTableExists(t *testing.T) {
+	table := "schema_migrations"
+
 	query := SchemaTableExists(table)
 	formatted := `SELECT 
 		TABLE_SCHEMA, 
@@ -24,6 +24,8 @@ func TestSchemaTableExists(t *testing.T) {
 }
 
 func TestNumberOfAppliedMigrations(t *testing.T) {
+	table := "schema_migrations"
+
 	query := NumberOfAppliedMigrations(table)
 	formatted := `SELECT COUNT(id) FROM schema_migrations;`
 
@@ -33,6 +35,8 @@ func TestNumberOfAppliedMigrations(t *testing.T) {
 }
 
 func TestCreateMigrationTable(t *testing.T) {
+	table := "schema_migrations"
+
 	query := CreateMigrationTable(table)
 	formatted := `CREATE TABLE schema_migrations (
 		id SERIAL,
@@ -49,6 +53,8 @@ func TestCreateMigrationTable(t *testing.T) {
 }
 
 func TestDropMigrationTable(t *testing.T) {
+	table := "schema_migrations"
+
 	query := DropMigrationTable(table)
 
 	if query != `DROP TABLE schema_migrations;` {
@@ -57,6 +63,8 @@ func TestDropMigrationTable(t *testing.T) {
 }
 
 func TestSelectMigrations(t *testing.T) {
+	table := "schema_migrations"
+
 	query := SelectMigrations(table)
 
 	if query != `SELECT id, name, version FROM schema_migrations;` {
@@ -65,6 +73,8 @@ func TestSelectMigrations(t *testing.T) {
 }
 
 func TestSelectMigrationsVersion(t *testing.T) {
+	table := "schema_migrations"
+
 	query := SelectMigrationsVersion(table)
 
 	if query != `SELECT id, name, version, created_at FROM schema_migrations ORDER BY id DESC LIMIT 1;` {
@@ -73,15 +83,18 @@ func TestSelectMigrationsVersion(t *testing.T) {
 }
 
 func TestCreateMigrationEntry(t *testing.T) {
+	table := "schema_migrations"
+
 	query := CreateMigrationEntry(table)
 
 	if query != `INSERT INTO schema_migrations (version, name) VALUES ($1, $2);` {
 		t.Fatalf(`got incorrect %v`, query)
 	}
-
 }
 
 func TestDeleteMigrationEntry(t *testing.T) {
+	table := "schema_migrations"
+
 	query := DeleteMigrationEntry(table)
 
 	if query != `DELETE FROM schema_migrations WHERE version = $1 AND name = $2;` {
@@ -91,6 +104,8 @@ func TestDeleteMigrationEntry(t *testing.T) {
 }
 
 func TestSelectMigrationEntry(t *testing.T) {
+	table := "schema_migrations"
+
 	query := SelectMigrationEntry(table)
 
 	if query != `SELECT id, name, version FROM schema_migrations WHERE version = $1 AND name = $2;` {

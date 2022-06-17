@@ -121,3 +121,6 @@ fabric.properties
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+test.log
+postgres_data/
