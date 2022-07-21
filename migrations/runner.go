@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	FilePattern        = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).yaml$`)
+	FilePattern        = *regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).yaml|sql$`)
 	CreateTablePattern = *regexp.MustCompile(`CREATE TABLE (?P<TableName>\w+)`)
 	DropTablePattern   = *regexp.MustCompile(`(DROP TABLE (IF EXISTS )?)(?P<TableName>\w+)`)
 )
@@ -161,15 +161,16 @@ func StopTracking(store Store, schemaTable string) bool {
 
 // MARK: - Migration Runner
 
-func (runner *Runner) Generate(name string, directory string) Migration {
+func (runner *Runner) Generate(format, filecontent, name, directory string) Migration {
 	var migration Migration
+	var content []byte
+	var err error
 
 	exclusionPattern := regexp.MustCompile(`(\-?\d{4} \-?\d{2} m=\+\d{1}.\d{9})|(\-)|(\W+)|(\:)|(\.)`)
 
 	/*
 		Input : 2022-05-04 18:49:19.478478 -0400 -04 m=+0.001942418
 		Output: 20220504184919478478 (20 characters in total)
-
 	*/
 	now := time.Now().String()
 	timestamp := exclusionPattern.ReplaceAllLiteralString(now, ``)
@@ -181,21 +182,31 @@ func (runner *Runner) Generate(name string, directory string) Migration {
 		timestamp = exclusionPattern.ReplaceAllLiteralString(now, ``)
 	}
 
+	filename := fmt.Sprintf("%v_%v.%v", timestamp, strcase.ToSnake(name), format)
+
 	migration.Schema = 2
 	migration.Engine = strings.ToLower(runner.store.Name())
-	migration.Changes.Up = []string{""}
+	migration.Changes.Up = []string{filecontent}
 	migration.Changes.Down = []string{""}
 	migration.Name = name
 	migration.Version = timestamp
-	migration.FileName = fmt.Sprintf("%v_%v.yaml", timestamp, strcase.ToSnake(name))
+	migration.FileName = filename
 
-	content, err := yaml.Marshal(&migration)
+	absolutePath := fmt.Sprintf("%v/%v", directory, filename)
+
+	// TODO: Call specific format implementation:
+
+	if format == "sql" {
+		content = runner.generateSQLTemplate(filecontent, migration)
+	} else if format == "yaml" {
+		content, err = yaml.Marshal(&migration)
+	}
 
 	if err != nil {
 		runner.LogError(fmt.Sprintf("Error while marshaling. %v\n", err))
 	}
 
-	err = ioutil.WriteFile(fmt.Sprintf("%v/%v", directory, migration.FileName), content, 0644)
+	err = ioutil.WriteFile(absolutePath, content, 0644)
 
 	if err != nil {
 		runner.LogError(fmt.Sprintf("Error while writing to file %v\n", err))
@@ -430,4 +441,15 @@ func (runner *Runner) removeMigrationFromSchema(migration Migration, table strin
 
 	runner.logger.CacheMessage(migration)
 	return nil
+}
+
+func (runner *Runner) generateSQLTemplate(filecontent string, migration Migration) (content []byte) {
+	topLine := fmt.Sprintf("-- liquibase formatted sql\n-- changeset liquibase:%v\n\n", migration.Version)
+	bottomLine := "\n\n-- rollback STATEMENT... \n"
+
+	content = append(content, []byte(topLine)...)
+	content = append(content, []byte(filecontent)...)
+	content = append(content, []byte(bottomLine)...)
+
+	return content
 }

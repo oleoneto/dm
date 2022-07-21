@@ -13,6 +13,7 @@ dm
 dm-api
 *__debug_bin
 .build/*
+test.log
 
 # Test binary, built with `go test -c`
 *.test
