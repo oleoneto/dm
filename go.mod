@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/drewstinnett/go-output-format v1.0.0
-	github.com/georgysavva/scany v0.3.0
+	github.com/georgysavva/scany v1.1.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jackc/pgx/v4 v4.17.1
