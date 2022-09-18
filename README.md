@@ -105,7 +105,10 @@ Aliases:
   generate, g
 
 Flags:
-  -h, --help   help for generate
+      --content string   file content [can be read from stdin]
+      --format string    migration file format (default "yaml")
+  -h, --help             help for generate
+      --stdin            read input from stdin
 
 Global Flags:
   -d, --directory string   migrations directory (default "./migrations")
