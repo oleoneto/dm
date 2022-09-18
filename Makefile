@@ -1,7 +1,8 @@
 GOBIN := $(GOPATH)/bin
 IMAGE_NAME = dm
-LIB_NAME = db-migrator-lib
+LIB_NAME = dm
 TARGET_FILE = dm
+DATABASE_URL=postgres://postgres:password@localhost:5433/test
 
 clean:
 	rm -rf $(TARGET_FILE)
@@ -17,9 +18,10 @@ build-deps:
 	@go mod tidy
 
 test: clean-test
-	go test -p 1 ./...
+	go test -cover -coverprofile=coverage.out -p 1 ./... | tee test.log
+	go tool cover -html=coverage.out
 
-build: build-deps test
+build: build-deps
 	@go build -o $(TARGET_FILE)
 
 build-for-docker:
