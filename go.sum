@@ -14,8 +14,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/drewstinnett/go-output-format v1.0.0 h1:dpYgDjWS5b0WUVd0PNM/GKnLZVCjmegVAo1olMbBxOE=
 github.com/drewstinnett/go-output-format v1.0.0/go.mod h1:IAp7i57+lUhM+OyRRnHz4PnNSJ1PezxNyxN8osqjd+4=
-github.com/georgysavva/scany v1.1.0 h1:KnUuWwLfLa9kvWzZx0aEq6iw15F2iCTqzp89LhfM5N8=
-github.com/georgysavva/scany v1.1.0/go.mod h1:q8QyrfXjmBk9iJD00igd4lbkAKEXAH/zIYoZ0z/Wan4=
+github.com/georgysavva/scany v1.2.0 h1:/rO39YZ5HT3lzDp3lNkkE30Mu95ebEtQ7F1/GluLc8Y=
+github.com/georgysavva/scany v1.2.0/go.mod h1:vGBpL5XRLOocMFFa55pj0P04DrL3I7qKVRL49K6Eu5o=
 github.com/gin-contrib/sse v0.1.0 h1:Y/yl/+YNO8GZSjAhjMsSuLt29uWRFHdHYUb5lYOV9qE=
 github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm+fLHvGI=
 github.com/gin-gonic/gin v1.8.1 h1:4+fr/el88TOO3ewCmQr8cx/CtZ/umlIRIs5M4NTNjf8=
