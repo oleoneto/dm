@@ -1,8 +1,13 @@
 package cmd
 
 import (
+	"bufio"
+	"flag"
+	"fmt"
+	"log"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/oleoneto/dm/logger"
 )
@@ -56,4 +61,24 @@ func parsedVersionFlag(flag string) (VersionFlag, error) {
 	logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
 
 	return parsedFlag, new(InvalidFlagError)
+}
+
+func readFromStdin() (input string, err error) {
+	if flag.NArg() == 0 {
+		reader := bufio.NewReader(os.Stdin)
+
+		input, err = reader.ReadString(';')
+
+		if err != nil {
+			log.Fatalln("failed to read input")
+		}
+
+		// otherwise, we would have a blank line
+		input = strings.TrimSpace(input)
+	} else {
+		input = flag.Arg(0)
+	}
+
+	fmt.Println("File content:\n", input)
+	return input, err
 }
