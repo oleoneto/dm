@@ -38,7 +38,12 @@ var (
 			_, ok := SUPPORTED_FORMATS[mformat]
 
 			if !ok {
-				message := logger.ApplicationError{Error: "Error: unsupported format."}
+				sformats := ""
+				for k := range SUPPORTED_FORMATS {
+					sformats = strings.Join([]string{sformats, k}, " ")
+				}
+
+				message := logger.ApplicationError{Error: fmt.Sprintf("Error: unsupported format. Supported formats are: %v", sformats)}
 				logger.Custom(format, template).WithFormattedOutput(&message, os.Stderr)
 				return
 			}
