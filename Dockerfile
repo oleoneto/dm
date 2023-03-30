@@ -24,7 +24,7 @@ RUN \
 
 # --------------------------
 
-FROM alpine
+FROM alpine:3.17.3
 
 ARG ALLOWED_HOST
 ARG API_VERSION
