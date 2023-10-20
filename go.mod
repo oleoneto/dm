@@ -6,7 +6,7 @@ require (
 	github.com/drewstinnett/go-output-format v1.0.0
 	github.com/georgysavva/scany v1.2.1
 	github.com/gin-gonic/gin v1.9.0
-	github.com/iancoleman/strcase v0.2.0
+	github.com/iancoleman/strcase v0.3.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/spf13/cobra v1.7.0
 	gopkg.in/yaml.v2 v2.4.0
