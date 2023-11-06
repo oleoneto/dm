@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jackc/pgx/v4 v4.17.2
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
