@@ -1,9 +1,13 @@
 package main
 
 import (
-	cli "github.com/oleoneto/dm/cli/cmd"
+	"github.com/oleoneto/dm/pkg/runner"
 )
 
+// _ "github.com/oleoneto/dm/cli/cmd"
+
 func main() {
-	cli.Execute()
+	r := runner.Runner{}
+
+	r.Migrator.IsEmpty()
 }
