@@ -9,6 +9,12 @@ type PostgreSQL struct{
     db *sql.DB
 }
 
+func NewPostgreSQL(db *sql.DB) *PostgreSQL {
+    return &PostgreSQL{
+        db: db,
+    }
+}
+
 func (e *PostgreSQL) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) { 
     r, err := e.db.ExecContext(ctx, query, args)
     return r, err
