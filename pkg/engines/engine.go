@@ -5,9 +5,8 @@ import (
 	"database/sql"
 )
 
-type SqlEngine interface {
-	Exec(context.Context, string, ...any) (sql.Result, error)
-	Query(context.Context, string, ...any) (*sql.Rows, error)
-	QueryRow(context.Context, string, ...any) (*sql.Row, error)
-	Name() string
+type SqlEngineProtocol interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
 }

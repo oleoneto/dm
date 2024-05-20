@@ -23,8 +23,6 @@ type Migration struct {
 	Name     string  `yaml:"name"`
 	Engine   string  `yaml:"engine" json:"-"`
 	Changes  Changes `yaml:"changes,omitempty" json:"-"`
-	next     *Migration
-	previous *Migration
 }
 
 type Changes struct {

@@ -8,11 +8,40 @@ import (
 	"github.com/oleoneto/dm/pkg/migrator"
 )
 
-// MigrationLoaderFunc - Loads migrations from the given directory
-type MigrationLoaderFunc func(file fs.FileInfo, sourceDir string, pattern *regexp.Regexp) (*migrator.Migration, error)
+type FileLoaderProtocol interface {
+	// LoadFiles - Loads files from the given directory matching the provided regex.
+	LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo
+}
 
-// FileLoaderFunc - Loads files from the given directory matching the provided regex
-type FileLoaderFunc func(sourceDir string, pattern *regexp.Regexp) []fs.FileInfo
+type MigrationBuilderProtocol interface {
+	// Build - Build migrations from files.
+	Build([]fs.FileInfo) (*ds.Queue[migrator.Migration], error)
 
-// MigrationBuilder - Given a slice of files, generates
-type MigrationBuilder func([]fs.FileInfo) ds.Queue[migrator.Migration]
+	// LoadMigrations - Loads migrations from the given directory
+	LoadMigrations(files []fs.FileInfo, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error)
+}
+
+type FileGeneratorProtocol interface {
+	// Generate - Creates a new file with the given content and format at the specified directory.
+	GenerateFile(format, content, name, dir string)
+}
+
+// ------------------------------------------------------------------------------
+// MARK: File Loader
+// ------------------------------------------------------------------------------
+
+var _ FileLoaderProtocol = (*FileLoader)(nil)
+
+type FileLoader struct{}
+
+func (fl FileLoader) LoadFiles(dir string, pattern *regexp.Regexp) []fs.FileInfo {
+	return []fs.FileInfo{}
+}
+
+func (fl FileLoader) Build([]fs.FileInfo) ds.Queue[migrator.Migration] {
+	return ds.Queue[migrator.Migration]{}
+}
+
+func (fl FileLoader) LoadMigrations(files []fs.FileInfo, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error) {
+	return []migrator.Migration{}, nil
+}

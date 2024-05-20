@@ -3,27 +3,50 @@ package runner
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/oleoneto/dm/pkg/ds"
 	"github.com/oleoneto/dm/pkg/engines"
+	"github.com/oleoneto/dm/pkg/fsystem"
 	"github.com/oleoneto/dm/pkg/migrator"
+	"gopkg.in/yaml.v2"
 )
 
+var MigrationFileRegexPattern = func() *regexp.Regexp {
+	return regexp.MustCompile(`(?P<Version>^\d{20})_(?P<Name>[aA-zZ]+).yaml|sql$`)
+}()
+
 type Runner struct {
+	engine         engines.SqlEngineProtocol
+	loader         fsystem.FileLoaderProtocol
 	migrator       migrator.MigratorProtocol
-	engine         engines.SqlEngine
 	trackerOptions TrackerOptions
 }
 
 type TrackerOptions struct {
-	Schema string
-	Table  string
+	Schema              string
+	Table               string
+	MigrationsDirectory string
+	FileRegexPattern    *regexp.Regexp
 }
 
 var _ migrator.MigrationsTrackerProtocol = (*Runner)(nil)
+var _ fsystem.MigrationBuilderProtocol = (*Runner)(nil)
 
-func NewRunner(m migrator.MigratorProtocol, e engines.SqlEngine, trackerOptions TrackerOptions) *Runner {
+func NewRunner(
+	e engines.SqlEngineProtocol,
+	l fsystem.FileLoaderProtocol,
+	m migrator.MigratorProtocol,
+	trackerOptions TrackerOptions,
+) *Runner {
+	if trackerOptions.MigrationsDirectory == "" {
+		trackerOptions.MigrationsDirectory = "migrations"
+	}
+
 	if trackerOptions.Table == "" {
 		trackerOptions.Table = "_migrations"
 	}
@@ -32,19 +55,83 @@ func NewRunner(m migrator.MigratorProtocol, e engines.SqlEngine, trackerOptions 
 		trackerOptions.Schema = "public"
 	}
 
+	if trackerOptions.FileRegexPattern == nil {
+		trackerOptions.FileRegexPattern = MigrationFileRegexPattern
+	}
+
 	if e == nil {
 		panic("sql engine not set")
 	}
 
 	return &Runner{
-		migrator: m,
-		engine:   e,
+		engine:         e,
+		loader:         l,
+		migrator:       m,
+		trackerOptions: trackerOptions,
 	}
 }
 
-func (r *Runner) AppliedMigrations(ctx context.Context) ds.Queue[migrator.Migration]
+// AppliedMigrations - Returns a list of migrations recorded in the database.
+func (r *Runner) AppliedMigrations(ctx context.Context) *ds.Queue[migrator.Migration] {
+	type migrationVersion struct {
+		Id        int       `json:"id"`
+		Name      string    `json:"name"`
+		Version   string    `json:"version"`
+		CreatedAt time.Time `json:"created_at" db:"created_at"`
+	}
 
-func (r *Runner) PendingMigrations(ctx context.Context) ds.Queue[migrator.Migration]
+	var versions []migrationVersion
+
+	rows, err := r.engine.QueryContext(
+		ctx,
+		fmt.Sprintf(
+			"SELECT id, name, version, created_at FROM %v ORDER BY id DESC",
+			r.trackerOptions.Table,
+		),
+	)
+	if err != nil {
+		return nil
+	}
+
+	if !rows.Next() {
+		return nil
+	}
+
+	rows.Scan(&versions)
+
+	var queue ds.Queue[migrator.Migration]
+	for _, item := range versions {
+		queue.Enqueue(migrator.Migration{Id: item.Id, Version: item.Version, Name: item.Name})
+	}
+
+	return &queue
+}
+
+// PendingMigrations - Compares the migrations found in the filesystem and those not recorded in the database.
+func (r *Runner) PendingMigrations(ctx context.Context) *ds.Queue[migrator.Migration] {
+	files := r.loader.LoadFiles(r.trackerOptions.MigrationsDirectory, MigrationFileRegexPattern)
+
+	migrations, err := r.Build(files)
+	if err != nil {
+		return nil
+	}
+	applied := r.AppliedMigrations(ctx)
+
+	var pending = ds.Queue[migrator.Migration]{}
+
+	item := migrations.Dequeue()
+	for item != nil {
+		if v := applied.Find(func(m migrator.Migration) bool {
+			return m.Version == item.Version
+		}); v != nil {
+			pending.Enqueue(*v)
+		}
+
+		item = migrations.Dequeue()
+	}
+
+	return &pending
+}
 
 // IsEmpty - Return `true` if the tracked table is found and has no rows.
 func (r *Runner) IsEmpty(ctx context.Context) bool {
@@ -56,7 +143,7 @@ func (r *Runner) IsEmpty(ctx context.Context) bool {
 		return true
 	}
 
-	rows, err := r.engine.Query(ctx, fmt.Sprintf(`SELECT COUNT(id) FROM %v`, r.trackerOptions.Table))
+	rows, err := r.engine.QueryContext(ctx, fmt.Sprintf(`SELECT COUNT(id) FROM %v`, r.trackerOptions.Table))
 	if err != nil {
 		return false
 	}
@@ -72,16 +159,16 @@ func (r *Runner) IsEmpty(ctx context.Context) bool {
 
 // IsTracker - Returns `true` if the tracked table is found in the database.
 func (r *Runner) IsTracked(ctx context.Context) bool {
-	rows, err := r.engine.Query(
+	rows, err := r.engine.QueryContext(
 		ctx,
 		fmt.Sprintf(`
-		SELECT 
-			TABLE_SCHEMA, 
+		SELECT
+			TABLE_SCHEMA,
 			TABLE_NAME,
 			TABLE_TYPE
-		FROM 
-			information_schema.TABLES 
-		WHERE 
+		FROM
+			information_schema.TABLES
+		WHERE
 			TABLE_TYPE LIKE 'BASE TABLE'
 			AND TABLE_NAME = '%v'
 		LIMIT 1`, r.trackerOptions.Table),
@@ -131,18 +218,18 @@ func (r *Runner) Version(ctx context.Context) string {
 
 	var version migrationVersion
 
-	rows, err := r.engine.QueryRow(
+	row := r.engine.QueryRowContext(
 		ctx,
 		fmt.Sprintf(
 			"SELECT id, name, version, created_at FROM %v ORDER BY id DESC LIMIT 1",
 			r.trackerOptions.Table,
 		),
 	)
-	if err != nil {
+	if row.Err() != nil {
 		return ""
 	}
 
-	rows.Scan(&version.Id, &version.Name, &version.Version, &version.CreatedAt)
+	row.Scan(&version.Id, &version.Name, &version.Version, &version.CreatedAt)
 
 	return version.Version
 }
@@ -154,17 +241,16 @@ func (r *Runner) StartTracking(ctx context.Context) error {
 		return nil
 	}
 
-	_, err := r.engine.Exec(
-		ctx,
-		fmt.Sprintf(`
-		CREATE TABLE %v (
-			id SERIAL,
-			version varchar UNIQUE NOT NULL,
-			name varchar UNIQUE NOT NULL,
-			created_at timestamp NOT NULL DEFAULT now(),
-			PRIMARY KEY(id)
-		)`, r.trackerOptions.Table),
-	)
+	query := fmt.Sprintf(`
+	CREATE TABLE %v (
+		id SERIAL,
+		version varchar UNIQUE NOT NULL,
+		name varchar UNIQUE NOT NULL,
+		created_at timestamp NOT NULL DEFAULT now(),
+		PRIMARY KEY(id)
+	)`, r.trackerOptions.Table)
+
+	_, err := r.engine.ExecContext(ctx, query)
 
 	if err != nil {
 		return err
@@ -180,7 +266,9 @@ func (r *Runner) StopTracking(ctx context.Context) error {
 		return nil
 	}
 
-	rows, err := r.engine.Exec(ctx, fmt.Sprintf(`DROP TABLE %v`, r.trackerOptions.Table))
+	query := fmt.Sprintf(`DROP TABLE %v`, r.trackerOptions.Table)
+
+	rows, err := r.engine.ExecContext(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -190,4 +278,44 @@ func (r *Runner) StopTracking(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// MARK: - Implement Migration Builder
+func (r *Runner) Build(files []fs.FileInfo) (*ds.Queue[migrator.Migration], error) {
+	migrations, err := r.LoadMigrations(files, r.trackerOptions.MigrationsDirectory, r.trackerOptions.FileRegexPattern)
+	if err != nil {
+		return nil, err
+	}
+
+	q := ds.NewFromSlice(migrations)
+
+	return q, nil
+}
+
+func (r *Runner) LoadMigrations(files []fs.FileInfo, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error) {
+	var migrations []migrator.Migration
+
+	for _, file := range files {
+		path := filepath.Join(dir, file.Name())
+		path, _ = filepath.Abs(path)
+		contents, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+
+		var m migrator.Migration
+		err = yaml.Unmarshal(contents, &m)
+		if err != nil {
+			return nil, err
+		}
+
+		match := pattern.FindStringSubmatch(file.Name())
+
+		m.FileName = file.Name()
+		m.Version = match[pattern.SubexpIndex("Version")]
+
+		migrations = append(migrations, m)
+	}
+
+	return migrations, nil
 }

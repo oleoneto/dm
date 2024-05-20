@@ -65,8 +65,19 @@ func (Q *Queue[T]) Remove(matcher func(item T) bool) {
 	}
 }
 
-// Find - Walks the queue in search of a given item.
-func (Q *Queue[T]) Find(finder func(item T) bool) (*Queue[T], bool) {
+// Find - Walks the queue in search of a given item. Returns the given item.
+func (Q *Queue[T]) Find(finder func(item T) bool) *T {
+	for _, item := range Q.data {
+		if finder(item) {
+			return &item
+		}
+	}
+
+	return nil
+}
+
+// FindSequence - Walks the queue in search of a given item. Returns a new sequence starting at the found item.
+func (Q *Queue[T]) FindSequence(finder func(item T) bool) *Queue[T] {
 	var matchedIndex = -1
 	for index, item := range Q.data {
 		if finder(item) {
@@ -76,7 +87,7 @@ func (Q *Queue[T]) Find(finder func(item T) bool) (*Queue[T], bool) {
 	}
 
 	if matchedIndex < 0 {
-		return nil, false
+		return nil
 	}
 
 	var queue Queue[T]
@@ -84,7 +95,7 @@ func (Q *Queue[T]) Find(finder func(item T) bool) (*Queue[T], bool) {
 		queue.Enqueue(Q.data[i])
 	}
 
-	return &queue, true
+	return &queue
 }
 
 func (Q *Queue[T]) Description() string {
@@ -96,4 +107,6 @@ func (Q *Queue[T]) Description() string {
 
 func (Q *Queue[T]) RawData() *[]T { return &Q.data }
 
-func (Q *Queue[T]) SetData(data []T) { Q.data = data }
+// MARK: Initializers
+
+func NewFromSlice[T any](data []T) *Queue[T] { return &Queue[T]{data: data} }

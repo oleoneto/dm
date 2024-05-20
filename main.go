@@ -2,23 +2,42 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"os"
 	"time"
 
-	"github.com/oleoneto/dm/pkg/engines"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/oleoneto/dm/pkg/fsystem"
 	"github.com/oleoneto/dm/pkg/migrator"
 	"github.com/oleoneto/dm/pkg/runner"
+	// _ "github.com/oleoneto/dm/cli/cmd"
 )
 
-// _ "github.com/oleoneto/dm/cli/cmd"
-
 func main() {
-	dbEngine := &engines.PostgreSQL{}
+	dbEngine, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		panic(err)
+	}
 
-	m := migrator.NewMigrationsController(dbEngine)
-	r := runner.NewRunner(m, dbEngine, runner.TrackerOptions{})
+	loader := fsystem.FileLoader{}
 
-	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	migrationController := migrator.NewMigrationsController(dbEngine)
+	r := runner.NewRunner(
+		dbEngine,
+		loader,
+		migrationController,
+		runner.TrackerOptions{Schema: "public", Table: "_migrations"},
+	)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer cancel()
 
-	r.IsTracked(ctx)
+	fmt.Println("Tracking?", r.IsTracked(ctx))
+	fmt.Println("Is Empty?", r.IsEmpty(ctx))
+	fmt.Println("StartTracking", r.StartTracking(ctx))
+	// fmt.Println("StopTracking", r.StopTracking(ctx))
+	fmt.Println("Tracking?", r.IsTracked(ctx))
+	fmt.Println("Applied migrations:", r.AppliedMigrations(ctx))
+	fmt.Println("Pending migrations", r.PendingMigrations(ctx))
 }

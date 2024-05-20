@@ -25,9 +25,9 @@ type MigrationsTrackerProtocol interface {
 	// IsEmpty - Indicator of whether the database has any migrations
 	IsEmpty(context.Context) bool
 
-	// AppliedMigrations - Returns all applied/saved migrations
-	AppliedMigrations(context.Context) ds.Queue[Migration]
+	// AppliedMigrations - Returns all applied migrations
+	AppliedMigrations(context.Context) *ds.Queue[Migration]
 
-	// PendingMigrations - Returns all non-applied/saved migrations.
-	PendingMigrations(context.Context) ds.Queue[Migration]
+	// PendingMigrations - Returns all non-applied migrations.
+	PendingMigrations(context.Context) *ds.Queue[Migration]
 }

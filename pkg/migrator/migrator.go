@@ -3,6 +3,7 @@ package migrator
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strings"
 
 	"github.com/iancoleman/strcase"
@@ -17,10 +18,10 @@ type MigratorProtocol interface {
 }
 
 type MigrationsController struct {
-	engine engines.SqlEngine
+	engine engines.SqlEngineProtocol
 }
 
-func NewMigrationsController(engine engines.SqlEngine) *MigrationsController {
+func NewMigrationsController(engine engines.SqlEngineProtocol) *MigrationsController {
 	return &MigrationsController{
 		engine: engine,
 	}
@@ -32,7 +33,7 @@ func (ctr *MigrationsController) MigrateUp(ctx context.Context, data ds.Queue[Mi
 		return err
 	}
 
-	_, err := ctr.engine.Exec(ctx, "")
+	_, err := ctr.engine.ExecContext(ctx, "")
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func (ctr *MigrationsController) MigrateDown(ctx context.Context, data ds.Queue[
 		return err
 	}
 
-	_, err := ctr.engine.Exec(ctx, "")
+	_, err := ctr.engine.ExecContext(ctx, "")
 	if err != nil {
 		return err
 	}
@@ -74,9 +75,12 @@ func (ctr *MigrationsController) Validate(ctx context.Context, migrations ds.Que
 			return errors.New("duplicate migration name")
 		}
 
-		if node.Engine != ctr.engine.Name() {
-			return errors.New("migration engine mismatch")
-		}
+		// if node.Engine != ctr.engine.Name() {
+		// 	return errors.New("migration engine mismatch")
+		// }
+
+		var createTablePattern = *regexp.MustCompile(`CREATE TABLE (?P<TableName>\w+)`)
+		var dropTablePattern = *regexp.MustCompile(`(DROP TABLE (IF EXISTS )?)(?P<TableName>\w+)`)
 
 		var mismatchedInstructions int
 		var mismatchedTables = map[string]string{}
@@ -87,17 +91,17 @@ func (ctr *MigrationsController) Validate(ctx context.Context, migrations ds.Que
 				return errors.New("missing (or invalid) migrate instruction")
 			}
 
-			// if migrations.CreateTablePattern.MatchString(change) {
-			// 	mismatchedInstructions += 1
-			// 	match := migrations.CreateTablePattern.FindStringSubmatch(change)
-			// 	table := match[migrations.CreateTablePattern.SubexpIndex("TableName")]
-			// 	mismatchedTables[table] = table
-			// } else if migrations.DropTablePattern.MatchString(change) {
-			// 	mismatchedInstructions -= 1
-			// 	match := migrations.DropTablePattern.FindStringSubmatch(change)
-			// 	table := match[migrations.DropTablePattern.SubexpIndex("TableName")]
-			// 	delete(mismatchedTables, table)
-			// }
+			if createTablePattern.MatchString(change) {
+				mismatchedInstructions += 1
+				match := createTablePattern.FindStringSubmatch(change)
+				table := match[createTablePattern.SubexpIndex("TableName")]
+				mismatchedTables[table] = table
+			} else if dropTablePattern.MatchString(change) {
+				mismatchedInstructions -= 1
+				match := dropTablePattern.FindStringSubmatch(change)
+				table := match[dropTablePattern.SubexpIndex("TableName")]
+				delete(mismatchedTables, table)
+			}
 		}
 
 		if mismatchedInstructions != 0 || len(mismatchedTables) != 0 {
