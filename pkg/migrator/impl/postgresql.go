@@ -1,3 +1,3 @@
-package postgresql
+package impl
 
 type PostgresMigrator struct{}

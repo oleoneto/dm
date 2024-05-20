@@ -17,40 +17,41 @@ type MigratorProtocol interface {
 }
 
 type MigrationsController struct {
-	engine      engines.SqlEngine
-	validator   func(context.Context, ds.Queue[Migration]) error
-	migrateUp   func(context.Context, ds.Queue[Migration]) error
-	migrateDown func(context.Context, ds.Queue[Migration]) error
+	engine engines.SqlEngine
 }
 
-func NewMigrationsController(
-	v func(context.Context, ds.Queue[Migration]) error,
-	up func(context.Context, ds.Queue[Migration]) error,
-	down func(context.Context, ds.Queue[Migration]) error,
-) *MigrationsController {
+func NewMigrationsController(engine engines.SqlEngine) *MigrationsController {
 	return &MigrationsController{
-		validator:   v,
-		migrateUp:   up,
-		migrateDown: down,
+		engine: engine,
 	}
 }
 
 // Up - Applies the given migrations
-func (ctr *MigrationsController) Up(ctx context.Context, data ds.Queue[Migration]) error {
-	if err := ctr.validator(ctx, data); err != nil {
+func (ctr *MigrationsController) MigrateUp(ctx context.Context, data ds.Queue[Migration]) error {
+	if err := ctr.Validate(ctx, data); err != nil {
 		return err
 	}
 
-	return ctr.migrateUp(ctx, data)
+	_, err := ctr.engine.Exec(ctx, "")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Down - Reverts the given migrations
-func (ctr *MigrationsController) Down(ctx context.Context, data ds.Queue[Migration]) error {
-	if err := ctr.validator(ctx, data); err != nil {
+func (ctr *MigrationsController) MigrateDown(ctx context.Context, data ds.Queue[Migration]) error {
+	if err := ctr.Validate(ctx, data); err != nil {
 		return err
 	}
 
-	return ctr.migrateDown(ctx, data)
+	_, err := ctr.engine.Exec(ctx, "")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Validate - Checks if all migrations are valid
@@ -65,9 +66,6 @@ func (ctr *MigrationsController) Validate(ctx context.Context, migrations ds.Que
 	node := migrations.Dequeue()
 
 	for node != nil {
-		var mismatchedInstructions int
-		var mismatchedTables = map[string]string{}
-
 		if visitedVersions[node.Version] {
 			return errors.New(`duplicate migration version`)
 		}
@@ -76,25 +74,31 @@ func (ctr *MigrationsController) Validate(ctx context.Context, migrations ds.Que
 			return errors.New("duplicate migration name")
 		}
 
-		// if ok, _ := supportedEngines {}
+		if node.Engine != ctr.engine.Name() {
+			return errors.New("migration engine mismatch")
+		}
 
-		// for _, change := range node.Changes.Up {
-		// 	if len(strings.Split(change, " ")) < 3 {
-		// 		return errors.New("missing (or invalid) migrate instruction")
-		// 	}
+		var mismatchedInstructions int
+		var mismatchedTables = map[string]string{}
 
-		// 	if migrations.CreateTablePattern.MatchString(change) {
-		// 		mismatchedInstructions += 1
-		// 		match := migrations.CreateTablePattern.FindStringSubmatch(change)
-		// 		table := match[migrations.CreateTablePattern.SubexpIndex("TableName")]
-		// 		mismatchedTables[table] = table
-		// 	} else if migrations.DropTablePattern.MatchString(change) {
-		// 		mismatchedInstructions -= 1
-		// 		match := migrations.DropTablePattern.FindStringSubmatch(change)
-		// 		table := match[migrations.DropTablePattern.SubexpIndex("TableName")]
-		// 		delete(mismatchedTables, table)
-		// 	}
-		// }
+		// TODO: Check CREATE and DROP mismatch
+		for _, change := range node.Changes.Up {
+			if len(strings.Split(change, " ")) < 3 {
+				return errors.New("missing (or invalid) migrate instruction")
+			}
+
+			// if migrations.CreateTablePattern.MatchString(change) {
+			// 	mismatchedInstructions += 1
+			// 	match := migrations.CreateTablePattern.FindStringSubmatch(change)
+			// 	table := match[migrations.CreateTablePattern.SubexpIndex("TableName")]
+			// 	mismatchedTables[table] = table
+			// } else if migrations.DropTablePattern.MatchString(change) {
+			// 	mismatchedInstructions -= 1
+			// 	match := migrations.DropTablePattern.FindStringSubmatch(change)
+			// 	table := match[migrations.DropTablePattern.SubexpIndex("TableName")]
+			// 	delete(mismatchedTables, table)
+			// }
+		}
 
 		if mismatchedInstructions != 0 || len(mismatchedTables) != 0 {
 			return errors.New("CREATE and DROP instructions must always be paired")

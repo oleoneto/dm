@@ -10,7 +10,7 @@ func (Q *Queue[T]) Size() int { return len(Q.data) }
 // IsEmpty - Returns true if the queue has no elements.
 func (Q *Queue[T]) IsEmpty() bool { return Q.Size() == 0 }
 
-// GetFront - Returns the node at the start of the queue.
+// GetFront - Returns the item at the start of the queue.
 func (Q *Queue[T]) GetFront() *T {
 	if Q.IsEmpty() {
 		return nil
@@ -19,7 +19,7 @@ func (Q *Queue[T]) GetFront() *T {
 	return &Q.data[0]
 }
 
-// GetBack - Returns the node at the end of the queue.
+// GetBack - Returns the item at the end of the queue.
 func (Q *Queue[T]) GetBack() *T {
 	if Q.IsEmpty() {
 		return nil
@@ -27,7 +27,7 @@ func (Q *Queue[T]) GetBack() *T {
 	return &Q.data[len(Q.data)-1]
 }
 
-// Dequeue - Returns the node at the start of the queue.
+// Dequeue - Returns the item at the start of the queue.
 func (Q *Queue[T]) Dequeue() *T {
 	if Q.IsEmpty() {
 		return nil
@@ -51,13 +51,13 @@ func (Q *Queue[T]) Dequeue() *T {
 	return &n
 }
 
-// Enqueue - Adds a new node to the end of the queue.
-func (Q *Queue[T]) Enqueue(node T) { Q.data = append(Q.data, node) }
+// Enqueue - Adds a new item to the end of the queue.
+func (Q *Queue[T]) Enqueue(item T) { Q.data = append(Q.data, item) }
 
-// Remove - Excludes a node from the queue.
-func (Q *Queue[T]) Remove(matcher func(node T) bool) {
-	for index, node := range Q.data {
-		if matcher(node) {
+// Remove - Excludes a item from the queue.
+func (Q *Queue[T]) Remove(matcher func(item T) bool) {
+	for index, item := range Q.data {
+		if matcher(item) {
 			newData := append(Q.data[:index], Q.data[index+1:]...)
 			Q.data = newData
 			return
@@ -65,25 +65,26 @@ func (Q *Queue[T]) Remove(matcher func(node T) bool) {
 	}
 }
 
-// Find - Walks the queue in search of a given node.
-func (Q *Queue[T]) Find(finder func(node T) bool) (queue Queue[T], isFound bool) {
+// Find - Walks the queue in search of a given item.
+func (Q *Queue[T]) Find(finder func(item T) bool) (*Queue[T], bool) {
 	var matchedIndex = -1
-	for index, node := range Q.data {
-		if finder(node) {
+	for index, item := range Q.data {
+		if finder(item) {
 			matchedIndex = index
 			break
 		}
 	}
 
 	if matchedIndex < 0 {
-		return
+		return nil, false
 	}
 
+	var queue Queue[T]
 	for i := matchedIndex; i < len(Q.data); i++ {
 		queue.Enqueue(Q.data[i])
 	}
 
-	return queue, true
+	return &queue, true
 }
 
 func (Q *Queue[T]) Description() string {
@@ -93,6 +94,6 @@ func (Q *Queue[T]) Description() string {
 	return fmt.Sprintf("%v migrations", Q.Size())
 }
 
-func (Q *Queue[T]) RawData() []T { return Q.data }
+func (Q *Queue[T]) RawData() *[]T { return &Q.data }
 
 func (Q *Queue[T]) SetData(data []T) { Q.data = data }

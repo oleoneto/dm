@@ -8,5 +8,6 @@ import (
 type SqlEngine interface {
 	Exec(context.Context, string, ...any) (sql.Result, error)
 	Query(context.Context, string, ...any) (*sql.Rows, error)
-	QueryRow(context.Context, string, ...any) *sql.Row
+	QueryRow(context.Context, string, ...any) (*sql.Row, error)
+	Name() string
 }
