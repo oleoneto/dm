@@ -17,7 +17,7 @@ type MigrationsTrackerProtocol interface {
 	Version(context.Context) string
 
 	// IsUpToDate - Indicator of whether migrations are current or up-to-date
-	IsUpToDate(context.Context, ds.Queue[Migration]) bool
+	IsUpToDate(context.Context) bool
 
 	// IsTracked - Indicator of whether the database is being managed by this tool
 	IsTracked(context.Context) bool

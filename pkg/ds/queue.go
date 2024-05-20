@@ -35,13 +35,10 @@ func (Q *Queue[T]) Dequeue() *T {
 
 	n := Q.data[0]
 
-	if Q.Size() == 1 {
-		Q.data = []T{}
-		return &n
-	}
+	if Q.Size() > 1 {
+		newData := Q.data[1:]
 
-	if Q.Size() == 2 {
-		Q.data = []T{Q.data[1]}
+		Q.data = newData
 		return &n
 	}
 
@@ -56,6 +53,10 @@ func (Q *Queue[T]) Enqueue(item T) { Q.data = append(Q.data, item) }
 
 // Remove - Excludes a item from the queue.
 func (Q *Queue[T]) Remove(matcher func(item T) bool) {
+	if Q.IsEmpty() {
+		return
+	}
+
 	for index, item := range Q.data {
 		if matcher(item) {
 			newData := append(Q.data[:index], Q.data[index+1:]...)
@@ -66,9 +67,13 @@ func (Q *Queue[T]) Remove(matcher func(item T) bool) {
 }
 
 // Find - Walks the queue in search of a given item. Returns the given item.
-func (Q *Queue[T]) Find(finder func(item T) bool) *T {
+func (Q *Queue[T]) Find(finderFunc func(item T) bool) *T {
+	if Q.IsEmpty() {
+		return nil
+	}
+
 	for _, item := range Q.data {
-		if finder(item) {
+		if finderFunc(item) {
 			return &item
 		}
 	}
@@ -77,10 +82,14 @@ func (Q *Queue[T]) Find(finder func(item T) bool) *T {
 }
 
 // FindSequence - Walks the queue in search of a given item. Returns a new sequence starting at the found item.
-func (Q *Queue[T]) FindSequence(finder func(item T) bool) *Queue[T] {
+func (Q *Queue[T]) FindSequence(finderFunc func(item T) bool) *Queue[T] {
+	if Q.IsEmpty() {
+		return nil
+	}
+
 	var matchedIndex = -1
 	for index, item := range Q.data {
-		if finder(item) {
+		if finderFunc(item) {
 			matchedIndex = index
 			break
 		}
@@ -98,15 +107,12 @@ func (Q *Queue[T]) FindSequence(finder func(item T) bool) *Queue[T] {
 	return &queue
 }
 
-func (Q *Queue[T]) Description() string {
-	if Q.IsEmpty() {
-		return "No migrations in list"
-	}
-	return fmt.Sprintf("%v migrations", Q.Size())
-}
+func (Q *Queue[T]) String() string { return fmt.Sprintf("%v migrations", Q.Size()) }
 
 func (Q *Queue[T]) RawData() *[]T { return &Q.data }
 
 // MARK: Initializers
+
+func NewQueue[T any]() *Queue[T] { return &Queue[T]{data: []T{}} }
 
 func NewFromSlice[T any](data []T) *Queue[T] { return &Queue[T]{data: data} }

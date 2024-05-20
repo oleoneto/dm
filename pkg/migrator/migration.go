@@ -43,11 +43,11 @@ type TableSchema struct {
 	TableType   string `json:"table_type" db:"table_type"`
 }
 
-func (V *MigratorVersion) Description() string {
-	return fmt.Sprintf("%v (%v).\nApplied at: %v", V.Version, V.Name, V.CreatedAt)
+func (m *MigratorVersion) String() string {
+	return fmt.Sprintf("%v (%v).\nApplied at: %v", m.Version, m.Name, m.CreatedAt)
 }
 
-func (M Migration) Description() string { return fmt.Sprintf("Version: %v (%v)", M.Version, M.Name) }
+func (m Migration) String() string { return fmt.Sprintf("%v (%v)", m.Version, m.Name) }
 
 // MARK: - Implements Sortable Interface
 
@@ -58,30 +58,6 @@ func (m Migrations) Len() int { return len(m) }
 func (m Migrations) Less(left, right int) bool { return m[left].Version < m[right].Version }
 
 func (m Migrations) Swap(left, right int) { m[left], m[right] = m[right], m[left] }
-
-// MARK: - Implements Formattable
-
-func (m Migrations) Description() string {
-	descriptions := ""
-	if m.Len() == 0 {
-		return "No migrations"
-	}
-
-	for _, migration := range m {
-		descriptions += fmt.Sprintln(migration.Description())
-	}
-	return descriptions
-}
-
-// MARK: - Implements Hashable
-
-func (m Migrations) ToHash() map[string]Migration {
-	hash := map[string]Migration{}
-	for _, v := range m {
-		hash[v.Version] = v
-	}
-	return hash
-}
 
 // MARK: - Migration file (implements the fs.FileInfo interface)
 
