@@ -1,6 +1,5 @@
-schema: 2
+schema: 3
 name: CreateArticles
-engine: postgresql
 changes:
   up:
     - |
@@ -13,7 +12,7 @@ changes:
         PRIMARY KEY(id),
 
         CONSTRAINT fk_user
-          FOREIGN KEY(user_id) 
+          FOREIGN KEY(user_id)
           REFERENCES users(id)
           ON DELETE CASCADE
       );

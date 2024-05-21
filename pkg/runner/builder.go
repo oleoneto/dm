@@ -6,26 +6,14 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/oleoneto/dm/pkg/ds"
-	"github.com/oleoneto/dm/pkg/fsystem"
 	"github.com/oleoneto/dm/pkg/migrator"
 	"gopkg.in/yaml.v2"
 )
 
-var _ fsystem.MigrationBuilderProtocol = (*Runner)(nil)
+// LoadMigrations - Loads migrations from the given directory
+type LoadMigrationsFunc func(files []fs.DirEntry, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error)
 
-func (r *Runner) Build(files []fs.DirEntry) (*ds.Queue[migrator.Migration], error) {
-	migrations, err := r.LoadMigrations(files, r.trackerOptions.MigrationsDirectory, r.trackerOptions.FileRegexPattern)
-	if err != nil {
-		return nil, err
-	}
-
-	q := ds.NewFromSlice(migrations)
-
-	return q, nil
-}
-
-func (r *Runner) LoadMigrations(files []fs.DirEntry, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error) {
+func LoadMigrations(files []fs.DirEntry, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error) {
 	var migrations []migrator.Migration
 
 	for _, file := range files {

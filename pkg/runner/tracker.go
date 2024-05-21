@@ -6,13 +6,15 @@ import (
 	"time"
 
 	"github.com/oleoneto/dm/pkg/ds"
+	"github.com/oleoneto/dm/pkg/helpers"
 	"github.com/oleoneto/dm/pkg/migrator"
+	log "github.com/sirupsen/logrus"
 )
 
 var _ migrator.MigrationsTrackerProtocol = (*Runner)(nil)
 
 // AppliedMigrations - Returns a list of migrations recorded in the database.
-func (r *Runner) AppliedMigrations(ctx context.Context) *ds.Queue[migrator.Migration] {
+func (r *Runner) AppliedMigrations(ctx context.Context) (*ds.Queue[migrator.Migration], error) {
 	type migrationVersion struct {
 		Id        int       `json:"id"`
 		Name      string    `json:"name"`
@@ -25,57 +27,64 @@ func (r *Runner) AppliedMigrations(ctx context.Context) *ds.Queue[migrator.Migra
 	rows, err := r.engine.QueryContext(
 		ctx,
 		fmt.Sprintf(
-			"SELECT id, name, version, created_at FROM %v ORDER BY id DESC",
-			r.trackerOptions.Table,
+			"SELECT id, name, version, created_at FROM %v.%v ORDER BY id DESC",
+			r.trackerOptions.Schema, r.trackerOptions.Table,
 		),
 	)
 	if err != nil {
-		return nil
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		return nil, err
 	}
 
-	if !rows.Next() {
-		return nil
+	for rows.Next() {
+		var v migrationVersion
+		if err := rows.Scan(&v.Id, &v.Name, &v.Version, &v.CreatedAt); err != nil {
+			log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+			return nil, err
+		}
+		versions = append(versions, v)
 	}
-
-	rows.Scan(&versions)
 
 	var queue ds.Queue[migrator.Migration]
 	for _, item := range versions {
 		queue.Enqueue(migrator.Migration{Id: item.Id, Version: item.Version, Name: item.Name})
 	}
 
-	return &queue
+	return &queue, nil
 }
 
 // PendingMigrations - Compares the migrations found in the filesystem and those not recorded in the database.
-func (r *Runner) PendingMigrations(ctx context.Context) *ds.Queue[migrator.Migration] {
+func (r *Runner) PendingMigrations(ctx context.Context) (*ds.Queue[migrator.Migration], error) {
 	files := r.loader.LoadFiles(r.trackerOptions.MigrationsDirectory, MigrationFileRegexPattern)
 
-	migrations, err := r.Build(files)
+	migrations, err := r.migrationLoaderFunc(files, r.trackerOptions.MigrationsDirectory, r.trackerOptions.FileRegexPattern)
 	if err != nil {
-		return nil
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		return nil, err
 	}
 
-	r.migrations = *migrations
+	q := ds.NewFromSlice(migrations)
+	r.migrations = *q
 
-	applied := r.AppliedMigrations(ctx)
-	if applied == nil {
-		return migrations
+	applied, err := r.AppliedMigrations(ctx)
+	if err != nil {
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		return &r.migrations, err
 	}
 
 	var pending = ds.Queue[migrator.Migration]{}
 
-	item := migrations.Dequeue()
+	item := q.Dequeue()
 	for item != nil {
 		v := applied.Find(func(m migrator.Migration) bool { return m.Version == item.Version })
-		if v != nil {
-			pending.Enqueue(*v)
+		if v == nil {
+			pending.Enqueue(*item)
 		}
 
-		item = migrations.Dequeue()
+		item = q.Dequeue()
 	}
 
-	return &pending
+	return &pending, nil
 }
 
 // IsEmpty - Return `true` if the tracked table is found and has no rows.
@@ -90,6 +99,7 @@ func (r *Runner) IsEmpty(ctx context.Context) bool {
 
 	rows, err := r.engine.QueryContext(ctx, fmt.Sprintf(`SELECT COUNT(id) FROM %v`, r.trackerOptions.Table))
 	if err != nil {
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
 		return false
 	}
 
@@ -119,6 +129,7 @@ func (r *Runner) IsTracked(ctx context.Context) bool {
 
 	rows, err := r.engine.QueryContext(ctx, query)
 	if err != nil {
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
 		return false
 	}
 
@@ -196,6 +207,7 @@ func (r *Runner) StartTracking(ctx context.Context) error {
 	)
 
 	if _, err := r.engine.ExecContext(ctx, query); err != nil {
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
 		return err
 	}
 
@@ -213,10 +225,12 @@ func (r *Runner) StopTracking(ctx context.Context) error {
 
 	rows, err := r.engine.ExecContext(ctx, query)
 	if err != nil {
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
 		return err
 	}
 
 	if n, err := rows.RowsAffected(); n <= 0 {
+		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
 		return err
 	}
 

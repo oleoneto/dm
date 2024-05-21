@@ -5,22 +5,11 @@ import (
 	"io/fs"
 	"os"
 	"regexp"
-
-	"github.com/oleoneto/dm/pkg/ds"
-	"github.com/oleoneto/dm/pkg/migrator"
 )
 
 type FileLoaderProtocol interface {
 	// LoadFiles - Loads files from the given directory matching the provided regex.
 	LoadFiles(dir string, pattern *regexp.Regexp) []fs.DirEntry
-}
-
-type MigrationBuilderProtocol interface {
-	// Build - Build migrations from files.
-	Build([]fs.DirEntry) (*ds.Queue[migrator.Migration], error)
-
-	// LoadMigrations - Loads migrations from the given directory
-	LoadMigrations(files []fs.DirEntry, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error)
 }
 
 type FileGeneratorProtocol interface {
@@ -62,12 +51,4 @@ func (fl FileLoader) LoadFiles(dir string, pattern *regexp.Regexp) []fs.DirEntry
 	}
 
 	return files
-}
-
-func (fl FileLoader) Build([]fs.DirEntry) ds.Queue[migrator.Migration] {
-	return ds.Queue[migrator.Migration]{}
-}
-
-func (fl FileLoader) LoadMigrations(files []fs.DirEntry, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error) {
-	return []migrator.Migration{}, nil
 }

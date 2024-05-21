@@ -1,8 +1,7 @@
-schema: 2
+schema: 3
 name: CreateComments
-engine: postgresql
 changes:
-  up: 
+  up:
     - |
       CREATE TABLE comments (
         id SERIAL,

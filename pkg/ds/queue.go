@@ -35,16 +35,15 @@ func (Q *Queue[T]) Dequeue() *T {
 
 	n := Q.data[0]
 
-	if Q.Size() > 1 {
-		newData := Q.data[1:]
-
-		Q.data = newData
+	if len(Q.data) == 1 {
+		n = Q.data[0]
+		Q.data = []T{}
 		return &n
 	}
 
-	newData := append(Q.data[:1], Q.data[len(Q.data)-1:]...)
-	Q.data = newData
+	var newData []T = Q.data[1:]
 
+	Q.data = newData
 	return &n
 }
 
@@ -110,6 +109,21 @@ func (Q *Queue[T]) FindSequence(finderFunc func(item T) bool) *Queue[T] {
 func (Q *Queue[T]) String() string { return fmt.Sprintf("%v migrations", Q.Size()) }
 
 func (Q *Queue[T]) RawData() *[]T { return &Q.data }
+
+func (Q *Queue[T]) Reversed() Queue[T] {
+	if Q.IsEmpty() {
+		return Queue[T]{}
+	}
+
+	total := Q.Size()
+	newData := make([]T, total)
+	for index := total - 1; index >= 0; index-- {
+		newData[total-index-1] = Q.data[index]
+	}
+	return *NewFromSlice(newData)
+}
+
+func (Q *Queue[T]) Reverse() { *Q = Q.Reversed() }
 
 // MARK: Initializers
 

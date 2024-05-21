@@ -26,8 +26,8 @@ type MigrationsTrackerProtocol interface {
 	IsEmpty(context.Context) bool
 
 	// AppliedMigrations - Returns all applied migrations
-	AppliedMigrations(context.Context) *ds.Queue[Migration]
+	AppliedMigrations(context.Context) (*ds.Queue[Migration], error)
 
 	// PendingMigrations - Returns all non-applied migrations.
-	PendingMigrations(context.Context) *ds.Queue[Migration]
+	PendingMigrations(context.Context) (*ds.Queue[Migration], error)
 }

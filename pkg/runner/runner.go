@@ -16,9 +16,15 @@ var MigrationFileRegexPattern = func() *regexp.Regexp {
 type Runner struct {
 	engine         engines.SqlEngineProtocol
 	loader         fsystem.FileLoaderProtocol
-	migrator       migrator.MigratorProtocol
 	trackerOptions TrackerOptions
-	migrations     ds.Queue[migrator.Migration]
+
+	// Data
+	migrations ds.Queue[migrator.Migration]
+
+	migrationLoaderFunc LoadMigrationsFunc
+	validatorFunc       ValidateMigrationsFunc
+	migrateUpFunc       MigrateUpFunc
+	migrateDownFunc     MigrateDownFunc
 }
 
 type TrackerOptions struct {
@@ -32,6 +38,10 @@ func NewRunner(
 	e engines.SqlEngineProtocol,
 	l fsystem.FileLoaderProtocol,
 	trackerOptions TrackerOptions,
+	lf LoadMigrationsFunc,
+	vf ValidateMigrationsFunc,
+	muf MigrateUpFunc,
+	mdf MigrateDownFunc,
 ) *Runner {
 	if trackerOptions.MigrationsDirectory == "" {
 		trackerOptions.MigrationsDirectory = "migrations"
@@ -54,8 +64,12 @@ func NewRunner(
 	}
 
 	return &Runner{
-		engine:         e,
-		loader:         l,
-		trackerOptions: trackerOptions,
+		engine:              e,
+		loader:              l,
+		migrationLoaderFunc: lf,
+		trackerOptions:      trackerOptions,
+		validatorFunc:       vf,
+		migrateUpFunc:       muf,
+		migrateDownFunc:     mdf,
 	}
 }

@@ -1,6 +1,5 @@
-schema: 2
+schema: 3
 name: CreateUsers
-engine: postgresql
 changes:
   up:
     - |

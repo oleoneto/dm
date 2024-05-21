@@ -7,40 +7,36 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
+	"github.com/oleoneto/dm/pkg/ds"
+	"github.com/oleoneto/dm/pkg/migrator"
 )
 
 // Validate - Checks if all migrations are valid
-func (r *Runner) Validate(ctx context.Context) error {
-	if r.migrations.IsEmpty() {
+func Validate(ctx context.Context, migrations ds.Queue[migrator.Migration]) error {
+	if migrations.IsEmpty() {
 		return fmt.Errorf("no migrations found")
 	}
-
-	migrations := r.migrations
 
 	m := migrations.Dequeue()
 	visitedNames := make(map[string]bool)
 	visitedVersions := make(map[string]bool)
 
 	for m != nil {
-		if visitedVersions[m.Version] {
+		// if m.Engine != r.engine.Name() { return fmt.Errorf("migration engine mismatch %v", m) }
+
+		if _, ok := visitedVersions[m.Version]; ok {
 			return fmt.Errorf(`duplicate (version): %v`, m)
 		}
 
-		if visitedNames[m.Name] {
+		if _, ok := visitedNames[m.Name]; ok {
 			return fmt.Errorf(`duplicate (name): %v`, m)
 		}
-
-		// if m.Engine != r.engine.Name() {
-		// 	return fmt.Errorf("migration engine mismatch %v", m)
-		// }
 
 		var createTablePattern = *regexp.MustCompile(`CREATE TABLE (?P<TableName>\w+)`)
 		var dropTablePattern = *regexp.MustCompile(`(DROP TABLE (IF EXISTS )?)(?P<TableName>\w+)`)
 
 		var mismatchedInstructions int
 		var mismatchedTables = map[string]string{}
-
-		// TODO: Check CREATE and DROP mismatch
 
 		for _, change := range m.Changes.Up {
 			if len(strings.Split(change, " ")) < 3 {
