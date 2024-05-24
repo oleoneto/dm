@@ -25,6 +25,10 @@ type ValidateMigrationsFunc func(context.Context, ds.Queue[migrator.Migration]) 
 
 // Apply - Migrate up. Applies all migrations.
 func (r *Runner) Apply(ctx context.Context) error {
+	if err := r.LoadMigrations(ctx); err != nil {
+		return err
+	}
+
 	if r.migrations.IsEmpty() {
 		return nil
 	}

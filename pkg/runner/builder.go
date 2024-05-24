@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -10,7 +11,38 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// LoadMigrations - Loads migrations from the given directory
+// FileLoaderFunc - Loads files from a file system
+type FileLoaderFunc func(dir string, pattern *regexp.Regexp) []fs.DirEntry
+
+func LoadFiles(dir string, pattern *regexp.Regexp) []fs.DirEntry {
+	var matchingFiles = func(dir string, pattern *regexp.Regexp) ([]fs.DirEntry, error) {
+		matches := []fs.DirEntry{}
+
+		files, err := os.ReadDir(dir)
+
+		if err != nil {
+			fmt.Println(err)
+			return matches, err
+		}
+
+		for _, file := range files {
+			if pattern.MatchString(file.Name()) {
+				matches = append(matches, file)
+			}
+		}
+
+		return matches, nil
+	}
+
+	files, err := matchingFiles(dir, pattern)
+	if err != nil {
+		return []fs.DirEntry{}
+	}
+
+	return files
+}
+
+// LoadMigrationsFunc - Loads migrations from the given directory
 type LoadMigrationsFunc func(files []fs.DirEntry, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error)
 
 func LoadMigrations(files []fs.DirEntry, dir string, pattern *regexp.Regexp) ([]migrator.Migration, error) {

@@ -21,6 +21,7 @@ type Runner struct {
 	// Data
 	migrations ds.Queue[migrator.Migration]
 
+	fileLoaderFunc      FileLoaderFunc
 	migrationLoaderFunc LoadMigrationsFunc
 	validatorFunc       ValidateMigrationsFunc
 	migrateUpFunc       MigrateUpFunc
@@ -35,28 +36,39 @@ type TrackerOptions struct {
 }
 
 func NewRunner(
+	trackerOptions *TrackerOptions,
 	e engines.SqlEngineProtocol,
-	l fsystem.FileLoaderProtocol,
-	trackerOptions TrackerOptions,
+	fl FileLoaderFunc,
 	lf LoadMigrationsFunc,
 	vf ValidateMigrationsFunc,
 	muf MigrateUpFunc,
 	mdf MigrateDownFunc,
 ) *Runner {
-	if trackerOptions.MigrationsDirectory == "" {
-		trackerOptions.MigrationsDirectory = "migrations"
+	var defaultTrackerOptions = TrackerOptions{
+		MigrationsDirectory: "migrations",
+		Table:               "_migrations",
+		Schema:              "public",
+		FileRegexPattern:    MigrationFileRegexPattern,
 	}
 
-	if trackerOptions.Table == "" {
-		trackerOptions.Table = "_migrations"
-	}
+	if trackerOptions == nil {
+		trackerOptions = &defaultTrackerOptions
+	} else {
+		if trackerOptions.MigrationsDirectory == "" {
+			trackerOptions.MigrationsDirectory = defaultTrackerOptions.MigrationsDirectory
+		}
 
-	if trackerOptions.Schema == "" {
-		trackerOptions.Schema = "public"
-	}
+		if trackerOptions.Table == "" {
+			trackerOptions.Table = defaultTrackerOptions.Table
+		}
 
-	if trackerOptions.FileRegexPattern == nil {
-		trackerOptions.FileRegexPattern = MigrationFileRegexPattern
+		if trackerOptions.Schema == "" {
+			trackerOptions.Schema = defaultTrackerOptions.Schema
+		}
+
+		if trackerOptions.FileRegexPattern == nil {
+			trackerOptions.FileRegexPattern = defaultTrackerOptions.FileRegexPattern
+		}
 	}
 
 	if e == nil {
@@ -64,10 +76,10 @@ func NewRunner(
 	}
 
 	return &Runner{
+		trackerOptions:      *trackerOptions,
 		engine:              e,
-		loader:              l,
+		fileLoaderFunc:      fl,
 		migrationLoaderFunc: lf,
-		trackerOptions:      trackerOptions,
 		validatorFunc:       vf,
 		migrateUpFunc:       muf,
 		migrateDownFunc:     mdf,

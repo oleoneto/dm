@@ -125,3 +125,5 @@ fabric.properties
 
 test.log
 postgres_data/
+_temp*
+temp*/
