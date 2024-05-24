@@ -1,6 +1,11 @@
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/oleoneto/dm/cmd/cli/core"
+	"github.com/spf13/cobra"
+)
+
+var state = core.NewCommandState()
 
 var rootCmd = &cobra.Command{
 	Use:   "dm",
