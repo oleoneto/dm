@@ -17,14 +17,19 @@ import (
 	"github.com/spf13/pflag"
 )
 
-type OutputFormatEnum struct {
+type FlagEnum struct {
 	Allowed []string
 	Default string
 }
 
 type CommandFlags struct {
 	OutputTemplate string
-	OutputFormat   *OutputFormatEnum
+	OutputFormat   *FlagEnum
+	Engine *FlagEnum
+	Extension *FlagEnum
+	Table string
+	Directory string
+	DatabaseURL string
 }
 
 type CommandState struct {
@@ -51,11 +56,11 @@ func (f *TableFormatter) Format(data any) ([]byte, error) {
 
 func (f *SilentFormatter) Format(data any) ([]byte, error) { return []byte{}, nil }
 
-func (ofe OutputFormatEnum) String() string { return ofe.Default }
+func (ofe FlagEnum) String() string { return ofe.Default }
 
-func (ofe *OutputFormatEnum) Type() string { return "string" }
+func (ofe *FlagEnum) Type() string { return "string" }
 
-func (ofe *OutputFormatEnum) Set(value string) error {
+func (ofe *FlagEnum) Set(value string) error {
 	isIncluded := func(opts []string, v string) bool {
 		for _, opt := range opts {
 			if v == opt {
@@ -74,21 +79,7 @@ func (ofe *OutputFormatEnum) Set(value string) error {
 	return nil
 }
 
-var _ pflag.Value = (*OutputFormatEnum)(nil)
-
-func NewCommandState() CommandState {
-	command := CommandState{
-		Writer: gout.New(),
-		Flags: CommandFlags{
-			OutputFormat: &OutputFormatEnum{
-				Allowed: []string{"plain", "json", "yaml", "table", "gotemplate", "silent"},
-				Default: "json",
-			},
-		},
-	}
-
-	return command
-}
+var _ pflag.Value = (*FlagEnum)(nil)
 
 func (c *CommandState) SetFormatter(cmd *cobra.Command, args []string) {
 	switch cmd.Flag("output").Value.String() {
@@ -104,8 +95,10 @@ func (c *CommandState) SetFormatter(cmd *cobra.Command, args []string) {
 		})
 	case "silent":
 		c.Writer.SetFormatter(&SilentFormatter{})
-	default:
+	case "plain":
 		c.Writer.SetFormatter(gPlain.Formatter{})
+	default:
+		c.Writer.SetFormatter(gJSON.Formatter{})
 	}
 }
 
@@ -120,4 +113,29 @@ func (c *CommandState) AfterHook(cmd *cobra.Command, args []string) {
 		os.Stderr,
 		append([]any{"Elapsed time:", time.Since(c.ExecutionStartTime)}, c.ExecutionExitLog...)...,
 	)
+}
+
+func NewCommandState() CommandState {
+	command := CommandState{
+		Writer: gout.New(),
+		Flags: CommandFlags{
+			OutputFormat: &FlagEnum{
+				Allowed: []string{"plain", "json", "yaml", "table", "gotemplate", "silent"},
+				Default: "json",
+			},
+			Engine: &FlagEnum{
+				Allowed: []string{"postgresql", "sqlite3"},
+				Default: "postgresql",
+			},
+			Extension: &FlagEnum{
+				Allowed: []string{"yaml", "sql"},
+				Default: "yaml",
+			},
+			Table: "_migrations",
+			Directory: "./migrations",
+			DatabaseURL: os.Getenv("DATABASE_URL"),
+		},
+	}
+
+	return command
 }
