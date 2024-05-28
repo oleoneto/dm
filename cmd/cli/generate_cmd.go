@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	filecontent       = ""
-	readStdin         = false
+	filecontent = ""
+	readStdin   = false
 )
 
 var generateCmd = &cobra.Command{

@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 func Execute() error {
 	setupGlobalFlags()
 
@@ -15,9 +14,11 @@ func Execute() error {
 var state = core.NewCommandState()
 
 var rootCmd = &cobra.Command{
-	Use:   "dm",
-	Short: "DM, short for Database Migrator is a migration management tool.",
-	Run:   func(cmd *cobra.Command, args []string) { cmd.Help() },
+	Use:               "dm",
+	Short:             "DM, short for Database Migrator is a migration management tool.",
+	PersistentPreRun:  state.BeforeHook,
+	PersistentPostRun: state.AfterHook,
+	Run:               func(cmd *cobra.Command, args []string) { cmd.Help() },
 }
 
 func init() {

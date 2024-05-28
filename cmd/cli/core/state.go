@@ -1,7 +1,9 @@
 package core
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -13,6 +15,7 @@ import (
 	gPlain "github.com/drewstinnett/gout/v2/formats/plain"
 	gYAML "github.com/drewstinnett/gout/v2/formats/yaml"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/oleoneto/dm/pkg/runner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -25,11 +28,11 @@ type FlagEnum struct {
 type CommandFlags struct {
 	OutputTemplate string
 	OutputFormat   *FlagEnum
-	Engine *FlagEnum
-	Extension *FlagEnum
-	Table string
-	Directory string
-	DatabaseURL string
+	Engine         *FlagEnum
+	Extension      *FlagEnum
+	Table          string
+	Directory      string
+	DatabaseURL    string
 }
 
 type CommandState struct {
@@ -37,6 +40,8 @@ type CommandState struct {
 	Flags              CommandFlags
 	ExecutionStartTime time.Time
 	ExecutionExitLog   []any
+	Database           *sql.DB
+	Runner             *runner.Runner
 }
 
 type TableFormattable interface{ TableWriter() table.Writer }
@@ -102,6 +107,39 @@ func (c *CommandState) SetFormatter(cmd *cobra.Command, args []string) {
 	}
 }
 
+func (c *CommandState) ConnectDatabase(cmd *cobra.Command, args []string) {
+	switch cmd.Flag("adapter").Value.String() {
+	case "postgresql":
+		var err error
+		c.Database, err = sql.Open("pgx", c.Flags.DatabaseURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "sqlite3":
+		var err error
+		c.Database, err = sql.Open("sqlite3_extended", c.Flags.DatabaseURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	default:
+		log.Fatal("database adapter not set")
+	}
+
+	c.Runner = runner.NewRunner(
+		&runner.TrackerOptions{
+			Schema:              "public",
+			Table:               c.Flags.Table,
+			MigrationsDirectory: c.Flags.Directory,
+		},
+		c.Database,
+		runner.LoadFiles,
+		runner.LoadMigrations,
+		runner.Validate,
+		runner.ApplyMigrations,
+		runner.RollbackMigrations,
+	)
+}
+
 func (c *CommandState) BeforeHook(cmd *cobra.Command, args []string) {
 	c.ExecutionStartTime = time.Now()
 
@@ -131,8 +169,8 @@ func NewCommandState() CommandState {
 				Allowed: []string{"yaml", "sql"},
 				Default: "yaml",
 			},
-			Table: "_migrations",
-			Directory: "./migrations",
+			Table:       "_migrations",
+			Directory:   "./migrations",
 			DatabaseURL: os.Getenv("DATABASE_URL"),
 		},
 	}

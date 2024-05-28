@@ -13,6 +13,8 @@ import (
 
 var _ migrator.MigrationsTrackerProtocol = (*Runner)(nil)
 
+func (r *Runner) Migrations(ctx context.Context) *ds.Queue[migrator.Migration] { return &r.migrations }
+
 // AppliedMigrations - Returns a list of migrations recorded in the database.
 func (r *Runner) AppliedMigrations(ctx context.Context) (*ds.Queue[migrator.Migration], error) {
 	if !r.IsTracked(ctx) {

@@ -2,14 +2,17 @@ package cli
 
 import (
 	"fmt"
-	"github.com/oleoneto/dm/cmd/cli/core"
+
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/oleoneto/dm/cmd/cli/core"
 	"github.com/spf13/cobra"
 )
 
 var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Shows the version of the CLI",
+	Use:               "version",
+	Short:             "Shows the version of the CLI",
+	PersistentPreRun:  state.BeforeHook,
+	PersistentPostRun: state.AfterHook,
 	Run: func(cmd *cobra.Command, args []string) {
 		state.Writer.Print(version)
 	},

@@ -10,14 +10,16 @@ var migrateCmd = &cobra.Command{
 	Aliases: []string{"m"},
 	Args:    cobra.MaximumNArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// validateDatabaseConfig()
+		state.BeforeHook(cmd, args)
+		state.ConnectDatabase(cmd, args)
 	},
-	Run: func(cmd *cobra.Command, args []string) {},
+	PersistentPostRun: state.AfterHook,
+	Run:               func(cmd *cobra.Command, args []string) {},
 }
 
 func init() {
-	// migrateCmd.PersistentFlags().VarP(state.Flags.DatabaseURL, "database-url", "u", "database url")
-	// migrateCmd.MarkFlagRequired("database-url")
+	migrateCmd.PersistentFlags().StringVarP(&state.Flags.DatabaseURL, "database-url", "u", "", "database url")
+	migrateCmd.MarkFlagRequired("database-url")
 	migrateCmd.MarkFlagRequired("adapter")
 	migrateCmd.MarkFlagRequired("table")
 }

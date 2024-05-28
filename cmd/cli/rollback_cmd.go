@@ -10,14 +10,16 @@ var rollbackCmd = &cobra.Command{
 	Aliases: []string{"r"},
 	Args:    cobra.MaximumNArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// validateDatabaseConfig()
+		state.BeforeHook(cmd, args)
+		state.ConnectDatabase(cmd, args)
 	},
-	Run: func(cmd *cobra.Command, args []string) {},
+	PersistentPostRun: state.AfterHook,
+	Run:               func(cmd *cobra.Command, args []string) {},
 }
 
 func init() {
-	// rollbackCmd.PersistentFlags().StringVarP(state.Flags.DatabaseURL, "database-url", "u", state.Flags.DatabaseURL, "database url")
-	// rollbackCmd.MarkFlagRequired("database-url")
+	rollbackCmd.PersistentFlags().StringVarP(&state.Flags.DatabaseURL, "database-url", "u", "", "database url")
+	rollbackCmd.MarkFlagRequired("database-url")
 	rollbackCmd.MarkFlagRequired("adapter")
 	rollbackCmd.MarkFlagRequired("table")
 }

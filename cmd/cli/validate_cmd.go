@@ -5,9 +5,11 @@ import (
 )
 
 var validateCmd = &cobra.Command{
-	Use:   "validate",
-	Short: "Validate the configuration of migration files",
-	Run: func(cmd *cobra.Command, args []string) {},
+	Use:               "validate",
+	Short:             "Validate the configuration of migration files",
+	PersistentPreRun:  state.BeforeHook,
+	PersistentPostRun: state.AfterHook,
+	Run:               func(cmd *cobra.Command, args []string) {},
 }
 
 type validationOutput struct {
