@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var showCmd = &cobra.Command{
+var ShowCmd = &cobra.Command{
 	Use:               "show",
 	Short:             "Shows the state of applied and pending migrations",
 	PersistentPreRun:  state.BeforeHook,
@@ -88,15 +88,15 @@ var (
 )
 
 func init() {
-	showCmd.AddCommand(allCmd)
-	showCmd.AddCommand(appliedCmd)
-	showCmd.AddCommand(pendingCmd)
-	showCmd.AddCommand(migrationVersionCmd)
+	ShowCmd.AddCommand(allCmd)
+	ShowCmd.AddCommand(appliedCmd)
+	ShowCmd.AddCommand(pendingCmd)
+	ShowCmd.AddCommand(migrationVersionCmd)
 
-	showCmd.PersistentFlags().StringVarP(&state.Flags.DatabaseURL, "database-url", "u", "", "database url")
-	showCmd.MarkFlagRequired("database-url")
-	showCmd.MarkFlagRequired("adapter")
-	showCmd.MarkFlagRequired("table")
+	ShowCmd.PersistentFlags().StringVarP(state.Flags.DatabaseURL, "database-url", "u", *state.Flags.DatabaseURL, "database url")
+	ShowCmd.MarkFlagRequired("database-url")
+	ShowCmd.MarkFlagRequired("adapter")
+	ShowCmd.MarkFlagRequired("table")
 }
 
 type Migrations []migrator.Migration
@@ -113,10 +113,12 @@ func (data Migrations) TableWriter() table.Writer {
 		ColumnConfig: &[]table.ColumnConfig{
 			{Name: "name", Align: text.AlignLeft},
 			{Name: "version", Align: text.AlignLeft},
+			{Name: "id", Align: text.AlignRight},
 		},
 		Header: table.Row{
 			"name",
 			"version",
+			"id",
 		},
 		Footer: &table.Row{"Total", len(data)},
 	})
@@ -125,6 +127,7 @@ func (data Migrations) TableWriter() table.Writer {
 		t.AppendRow(table.Row{
 			item.Name,
 			item.Version,
+			item.Id,
 		})
 	}
 

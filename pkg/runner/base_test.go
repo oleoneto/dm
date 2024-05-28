@@ -3,13 +3,10 @@ package runner_test
 import (
 	"io/fs"
 	"regexp"
-	"sync"
 	"time"
 
 	"github.com/oleoneto/dm/pkg/fsystem"
 )
-
-var once sync.Once
 
 type PgOptions struct {
 	Username       string

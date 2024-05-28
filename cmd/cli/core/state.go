@@ -15,6 +15,7 @@ import (
 	gPlain "github.com/drewstinnett/gout/v2/formats/plain"
 	gYAML "github.com/drewstinnett/gout/v2/formats/yaml"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/oleoneto/dm/pkg/helpers"
 	"github.com/oleoneto/dm/pkg/runner"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -32,7 +33,7 @@ type CommandFlags struct {
 	Extension      *FlagEnum
 	Table          string
 	Directory      string
-	DatabaseURL    string
+	DatabaseURL    *string
 }
 
 type CommandState struct {
@@ -108,21 +109,29 @@ func (c *CommandState) SetFormatter(cmd *cobra.Command, args []string) {
 }
 
 func (c *CommandState) ConnectDatabase(cmd *cobra.Command, args []string) {
+	if c.Flags.DatabaseURL == nil || *c.Flags.DatabaseURL == "" {
+		log.Fatalln("database-url not set")
+		return
+	}
+
 	switch cmd.Flag("adapter").Value.String() {
 	case "postgresql":
 		var err error
-		c.Database, err = sql.Open("pgx", c.Flags.DatabaseURL)
+		c.Database, err = sql.Open("pgx", *c.Flags.DatabaseURL)
 		if err != nil {
 			log.Fatal(err)
+			return
 		}
 	case "sqlite3":
 		var err error
-		c.Database, err = sql.Open("sqlite3_extended", c.Flags.DatabaseURL)
+		c.Database, err = sql.Open("sqlite3_extended", *c.Flags.DatabaseURL)
 		if err != nil {
 			log.Fatal(err)
+			return
 		}
 	default:
 		log.Fatal("database adapter not set")
+		return
 	}
 
 	c.Runner = runner.NewRunner(
@@ -153,7 +162,7 @@ func (c *CommandState) AfterHook(cmd *cobra.Command, args []string) {
 	)
 }
 
-func NewCommandState() CommandState {
+func NewCommandState() *CommandState {
 	command := CommandState{
 		Writer: gout.New(),
 		Flags: CommandFlags{
@@ -171,9 +180,9 @@ func NewCommandState() CommandState {
 			},
 			Table:       "_migrations",
 			Directory:   "./migrations",
-			DatabaseURL: os.Getenv("DATABASE_URL"),
+			DatabaseURL: helpers.PointerTo(os.Getenv("DATABASE_URL")),
 		},
 	}
 
-	return command
+	return &command
 }

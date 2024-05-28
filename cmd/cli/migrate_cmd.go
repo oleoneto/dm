@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var migrateCmd = &cobra.Command{
+var MigrateCmd = &cobra.Command{
 	Use:     "migrate NAME|VERSION",
 	Short:   "Run migration(s)",
 	Aliases: []string{"m"},
@@ -23,17 +23,27 @@ var migrateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.TODO()
 
-		var version core.VersionFlag
+		var version core.MigrationFilterFlag
 		var err error
 
 		if len(args) > 0 && args[0] != "" {
 			version, err = core.ParseVersionArgs(args[0])
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalln(err)
+				return
 			}
 		}
 
 		migrations, err := state.Runner.PendingMigrations(ctx)
+		if err != nil {
+			log.Fatalln(err)
+			return
+		}
+
+		if migrations == nil || migrations.IsEmpty() {
+			fmt.Println("No pending migrations to apply.")
+			return
+		}
 
 		if version.Value != "" {
 			sequence := migrations.FindSequence(func(item migrator.Migration) bool {
@@ -48,13 +58,16 @@ var migrateCmd = &cobra.Command{
 			migrations = sequence
 		}
 
-		state.Runner.Apply(ctx, migrations)
+		err = state.Runner.ApplySome(ctx, *migrations)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	},
 }
 
 func init() {
-	migrateCmd.PersistentFlags().StringVarP(&state.Flags.DatabaseURL, "database-url", "u", "", "database url")
-	migrateCmd.MarkFlagRequired("database-url")
-	migrateCmd.MarkFlagRequired("adapter")
-	migrateCmd.MarkFlagRequired("table")
+	MigrateCmd.PersistentFlags().StringVarP(state.Flags.DatabaseURL, "database-url", "u", *state.Flags.DatabaseURL, "database url")
+	MigrateCmd.MarkFlagRequired("database-url")
+	MigrateCmd.MarkFlagRequired("adapter")
+	MigrateCmd.MarkFlagRequired("table")
 }

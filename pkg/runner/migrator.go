@@ -9,7 +9,6 @@ import (
 	"github.com/oleoneto/dm/pkg/helpers"
 	"github.com/oleoneto/dm/pkg/migrator"
 	log "github.com/sirupsen/logrus"
-	// "github.com/oleoneto/dm/pkg/logger"
 )
 
 // --------------------------------------------
@@ -23,14 +22,30 @@ type MigrateDownFunc func(context.Context, ds.Queue[migrator.Migration], engines
 
 type ValidateMigrationsFunc func(context.Context, ds.Queue[migrator.Migration]) error
 
+// ApplySome
+func (r *Runner) ApplySome(ctx context.Context, migrations ds.Queue[migrator.Migration]) error {
+	r.migrations = migrations
+
+	if r.migrations.IsEmpty() {
+		log.Debugln("No migrations provided", helpers.GetCurrentFuncName())
+		return nil
+	}
+
+	if err := r.validatorFunc(ctx, r.migrations); err != nil {
+		return err
+	}
+
+	if err := r.StartTracking(ctx); err != nil {
+		return err
+	}
+
+	return r.migrateUpFunc(ctx, r.migrations, r.engine, r.trackerOptions)
+}
+
 // Apply - Migrate up. Applies all migrations.
-func (r *Runner) Apply(ctx context.Context, migrations *ds.Queue[migrator.Migration]) error {
-	if migrations != nil {
-		r.migrations = *migrations
-	} else {
-		if err := r.LoadMigrations(ctx); err != nil {
-			return err
-		}
+func (r *Runner) Apply(ctx context.Context) error {
+	if err := r.LoadMigrations(ctx); err != nil {
+		return err
 	}
 
 	if r.migrations.IsEmpty() {
@@ -56,14 +71,11 @@ func (r *Runner) Apply(ctx context.Context, migrations *ds.Queue[migrator.Migrat
 	return r.migrateUpFunc(ctx, r.migrations, r.engine, r.trackerOptions)
 }
 
-// RevertMigrations - Migrate down. Reverts the given migrations.
-func (r *Runner) Revert(ctx context.Context) error {
+func (r *Runner) RevertSome(ctx context.Context, migrations ds.Queue[migrator.Migration]) error {
+	r.migrations = migrations
+
 	if r.migrations.IsEmpty() {
 		return nil
-	}
-
-	if err := r.validatorFunc(ctx, r.migrations); err != nil {
-		return err
 	}
 
 	// Can't revert if database is not being tracked
@@ -77,13 +89,30 @@ func (r *Runner) Revert(ctx context.Context) error {
 		return nil
 	}
 
-	// 0, 1, 3
-	// Version 1
-	// Revert should rollback 1, 0
+	reversedQueue := r.migrations.Reversed()
+	return r.migrateDownFunc(ctx, reversedQueue, r.engine, r.trackerOptions)
+}
+
+// RevertMigrations - Migrate down. Reverts the given migrations.
+func (r *Runner) Revert(ctx context.Context) error {
+	if r.migrations.IsEmpty() {
+		return nil
+	}
+
+	// Can't revert if database is not being tracked
+	if !r.IsTracked(ctx) {
+		return fmt.Errorf("database not currently tracked")
+	}
+
+	// Determine if there are any migrations applied.
+	version := r.Version(ctx)
+	if version == "" {
+		return nil
+	}
 
 	seq := r.migrations.FindSequence(func(m migrator.Migration) bool { return m.Version == version })
 	if seq != nil {
-		reversedQueue := seq.Reversed()
+		reversedQueue := seq.Reversed() // Important so rollback occurs in the correct order (DESC)
 		return r.migrateDownFunc(ctx, reversedQueue, r.engine, r.trackerOptions)
 	}
 
@@ -108,7 +137,7 @@ func ApplyMigrations(ctx context.Context, migrations ds.Queue[migrator.Migration
 		_, merr := tx.ExecContext(ctx, stmt)
 		if merr != nil {
 			tx.Rollback()
-			log.Error(ctx, merr.Error(), helpers.GetCurrentFuncName())
+			log.Error(merr.Error(), helpers.GetCurrentFuncName())
 			return merr
 		}
 
@@ -116,7 +145,7 @@ func ApplyMigrations(ctx context.Context, migrations ds.Queue[migrator.Migration
 		_, terr := tx.ExecContext(ctx, trackMigrationStatement(trackerOptions.Schema, trackerOptions.Table), m.Version, m.Name)
 		if terr != nil {
 			tx.Rollback()
-			log.Error(ctx, terr.Error(), helpers.GetCurrentFuncName())
+			log.Error(terr.Error(), helpers.GetCurrentFuncName())
 			return terr
 		}
 
@@ -143,7 +172,7 @@ func RollbackMigrations(ctx context.Context, migrations ds.Queue[migrator.Migrat
 		_, merr := tx.ExecContext(ctx, stmt)
 		if merr != nil {
 			tx.Rollback()
-			log.Error(ctx, merr.Error(), helpers.GetCurrentFuncName())
+			log.Error(merr.Error(), helpers.GetCurrentFuncName())
 			return merr
 		}
 
@@ -151,7 +180,7 @@ func RollbackMigrations(ctx context.Context, migrations ds.Queue[migrator.Migrat
 		_, terr := tx.ExecContext(ctx, untrackMigrationStatement(trackerOptions.Schema, trackerOptions.Table), m.Version, m.Name)
 		if terr != nil {
 			tx.Rollback()
-			log.Error(ctx, terr.Error(), helpers.GetCurrentFuncName())
+			log.Error(terr.Error(), helpers.GetCurrentFuncName())
 			return terr
 		}
 

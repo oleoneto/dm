@@ -5,21 +5,21 @@ import (
 	"regexp"
 )
 
-func ParseVersionArgs(flag string) (VersionFlag, error) {
-	parsedFlag := VersionFlag{Value: flag}
+func ParseVersionArgs(flag string) (MigrationFilterFlag, error) {
+	parsedFlag := MigrationFilterFlag{Value: flag}
 
 	if NameValidationPattern.MatchString(flag) {
-		parsedFlag.Type = "Name"
+		parsedFlag.Type = "name"
 		return parsedFlag, nil
 	} else if VersionValidationPattern.MatchString(flag) {
-		parsedFlag.Type = "Version"
+		parsedFlag.Type = "version"
 		return parsedFlag, nil
 	}
 
 	return parsedFlag, errors.New("invalid migration version or name")
 }
 
-type VersionFlag struct {
+type MigrationFilterFlag struct {
 	Value, Type string
 }
 

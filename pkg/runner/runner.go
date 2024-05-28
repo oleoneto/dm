@@ -5,7 +5,6 @@ import (
 
 	"github.com/oleoneto/dm/pkg/ds"
 	"github.com/oleoneto/dm/pkg/engines"
-	"github.com/oleoneto/dm/pkg/fsystem"
 	"github.com/oleoneto/dm/pkg/migrator"
 )
 
@@ -15,7 +14,6 @@ var MigrationFileRegexPattern = func() *regexp.Regexp {
 
 type Runner struct {
 	engine         engines.SqlEngineProtocol
-	loader         fsystem.FileLoaderProtocol
 	trackerOptions TrackerOptions
 
 	// Data

@@ -8,12 +8,12 @@ import (
 func Execute() error {
 	setupGlobalFlags()
 
-	return rootCmd.Execute()
+	return RootCmd.Execute()
 }
 
 var state = core.NewCommandState()
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:               "dm",
 	Short:             "DM, short for Database Migrator is a migration management tool.",
 	PersistentPreRun:  state.BeforeHook,
@@ -22,18 +22,18 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(showCmd)
-	rootCmd.AddCommand(migrateCmd)
-	rootCmd.AddCommand(rollbackCmd)
+	RootCmd.AddCommand(VersionCmd)
+	RootCmd.AddCommand(ShowCmd)
+	RootCmd.AddCommand(MigrateCmd)
+	RootCmd.AddCommand(RollbackCmd)
 }
 
 func setupGlobalFlags() {
-	rootCmd.PersistentFlags().VarP(state.Flags.OutputFormat, "output", "o", "output format")
-	rootCmd.PersistentFlags().StringVarP(&state.Flags.OutputTemplate, "output-template", "y", state.Flags.OutputTemplate, "template (used when output format is 'gotemplate')")
+	RootCmd.PersistentFlags().VarP(state.Flags.OutputFormat, "output", "o", "output format")
+	RootCmd.PersistentFlags().StringVarP(&state.Flags.OutputTemplate, "output-template", "y", state.Flags.OutputTemplate, "template (used when output format is 'gotemplate')")
 
 	// Migrator configuration
-	rootCmd.PersistentFlags().VarP(state.Flags.Engine, "adapter", "a", "database adapter")
-	rootCmd.PersistentFlags().StringVarP(&state.Flags.Directory, "directory", "d", state.Flags.Directory, "migrations directory")
-	rootCmd.PersistentFlags().StringVarP(&state.Flags.Table, "table", "t", state.Flags.Table, "table wherein migrations are tracked")
+	RootCmd.PersistentFlags().VarP(state.Flags.Engine, "adapter", "a", "database adapter")
+	RootCmd.PersistentFlags().StringVarP(&state.Flags.Directory, "directory", "d", state.Flags.Directory, "migrations directory")
+	RootCmd.PersistentFlags().StringVarP(&state.Flags.Table, "table", "t", state.Flags.Table, "table wherein migrations are tracked")
 }
