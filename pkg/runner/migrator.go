@@ -24,9 +24,13 @@ type MigrateDownFunc func(context.Context, ds.Queue[migrator.Migration], engines
 type ValidateMigrationsFunc func(context.Context, ds.Queue[migrator.Migration]) error
 
 // Apply - Migrate up. Applies all migrations.
-func (r *Runner) Apply(ctx context.Context) error {
-	if err := r.LoadMigrations(ctx); err != nil {
-		return err
+func (r *Runner) Apply(ctx context.Context, migrations *ds.Queue[migrator.Migration]) error {
+	if migrations != nil {
+		r.migrations = *migrations
+	} else {
+		if err := r.LoadMigrations(ctx); err != nil {
+			return err
+		}
 	}
 
 	if r.migrations.IsEmpty() {

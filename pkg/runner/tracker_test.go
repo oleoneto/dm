@@ -204,7 +204,7 @@ func (suite *TrackerTestSuite) TestApplyMigrations() {
 	err := r.StartTracking(ctx)
 	assert.NoError(suite.T(), err)
 
-	err = r.Apply(ctx) // TODO: Take loaderFunc as argument
+	err = r.Apply(ctx, nil) // TODO: Take loaderFunc as argument
 	assert.NoError(suite.T(), err)
 
 	res, err := r.AppliedMigrations(ctx)
