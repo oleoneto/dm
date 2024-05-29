@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/oleoneto/dm/pkg/ds"
 	"github.com/oleoneto/dm/pkg/helpers"
 	"github.com/oleoneto/dm/pkg/migrator"
 	log "github.com/sirupsen/logrus"
@@ -13,12 +12,12 @@ import (
 
 var _ migrator.MigrationsTrackerProtocol = (*Runner)(nil)
 
-func (r *Runner) Migrations(ctx context.Context) *ds.Queue[migrator.Migration] { return &r.migrations }
+func (r *Runner) Migrations(ctx context.Context) []migrator.Migration { return r.migrations }
 
 // AppliedMigrations - Returns a list of migrations recorded in the database.
-func (r *Runner) AppliedMigrations(ctx context.Context) (*ds.Queue[migrator.Migration], error) {
+func (r *Runner) AppliedMigrations(ctx context.Context) ([]migrator.Migration, error) {
 	if !r.IsTracked(ctx) {
-		return ds.NewQueue[migrator.Migration](), nil
+		return []migrator.Migration{}, nil
 	}
 
 	type migrationVersion struct {
@@ -38,52 +37,47 @@ func (r *Runner) AppliedMigrations(ctx context.Context) (*ds.Queue[migrator.Migr
 		),
 	)
 	if err != nil {
-		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
 		return nil, err
 	}
 
 	for rows.Next() {
 		var v migrationVersion
 		if err := rows.Scan(&v.Id, &v.Name, &v.Version, &v.CreatedAt); err != nil {
-			log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+			log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
 			return nil, err
 		}
 		versions = append(versions, v)
 	}
 
-	var queue ds.Queue[migrator.Migration]
+	var items []migrator.Migration
 	for _, item := range versions {
-		queue.Enqueue(migrator.Migration{Id: item.Id, Version: item.Version, Name: item.Name})
+		items = append(items, migrator.Migration{Id: item.Id, Version: item.Version, Name: item.Name})
 	}
 
-	return &queue, nil
+	return items, nil
 }
 
 // PendingMigrations - Compares the migrations found in the filesystem and those not recorded in the database.
-func (r *Runner) PendingMigrations(ctx context.Context) (*ds.Queue[migrator.Migration], error) {
-	if err := r.LoadMigrations(ctx); err != nil {
+func (r *Runner) PendingMigrations(ctx context.Context) ([]migrator.Migration, error) {
+	if err := r.LoadAllMigrations(ctx); err != nil {
 		return nil, err
 	}
 
 	applied, err := r.AppliedMigrations(ctx)
 	if err != nil {
-		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
-		return &r.migrations, err
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
+		return r.migrations, err
 	}
 
-	var pending = ds.Queue[migrator.Migration]{}
-
-	item := r.migrations.Dequeue()
-	for item != nil {
-		v := applied.Find(func(m migrator.Migration) bool { return m.Version == item.Version })
-		if v == nil {
-			pending.Enqueue(*item)
-		}
-
-		item = r.migrations.Dequeue()
+	if len(applied) == 0 {
+		return r.migrations, nil
 	}
 
-	return &pending, nil
+	latest := applied[0] // sorted in reverse creation order
+	pending := helpers.FindRightSequence(r.migrations, func(item migrator.Migration) bool { return item.Version > latest.Version })
+
+	return pending, nil
 }
 
 // IsEmpty - Return `true` if the tracked table is found and has no rows.
@@ -98,7 +92,7 @@ func (r *Runner) IsEmpty(ctx context.Context) bool {
 
 	rows, err := r.engine.QueryContext(ctx, fmt.Sprintf(`SELECT COUNT(id) FROM %v`, r.trackerOptions.Table))
 	if err != nil {
-		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
 		return false
 	}
 
@@ -128,7 +122,7 @@ func (r *Runner) IsTracked(ctx context.Context) bool {
 
 	rows, err := r.engine.QueryContext(ctx, query)
 	if err != nil {
-		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
 		return false
 	}
 
@@ -156,7 +150,7 @@ func (r *Runner) IsUpToDate(ctx context.Context) bool {
 		return false
 	}
 
-	latest := r.migrations.GetBack()
+	latest := r.migrations[len(r.migrations)-1]
 	version := r.Version(ctx)
 
 	return version == latest.Version
@@ -206,7 +200,7 @@ func (r *Runner) StartTracking(ctx context.Context) error {
 	)
 
 	if _, err := r.engine.ExecContext(ctx, query); err != nil {
-		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
 		return err
 	}
 
@@ -224,23 +218,39 @@ func (r *Runner) StopTracking(ctx context.Context) error {
 
 	_, err := r.engine.ExecContext(ctx, query)
 	if err != nil {
-		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (r *Runner) LoadMigrations(ctx context.Context) error {
+func (r *Runner) LoadAllMigrations(ctx context.Context) error {
 	files := r.fileLoaderFunc(r.trackerOptions.MigrationsDirectory, MigrationFileRegexPattern)
-
-	migrations, err := r.migrationLoaderFunc(files, r.trackerOptions.MigrationsDirectory, r.trackerOptions.FileRegexPattern)
+	var err error
+	r.migrations, err = r.migrationLoaderFunc(files, r.trackerOptions.MigrationsDirectory, r.trackerOptions.FileRegexPattern)
 	if err != nil {
-		log.Error(ctx, err.Error(), helpers.GetCurrentFuncName())
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
 		return err
 	}
 
-	r.migrations = *ds.NewFromSlice(migrations)
+	return nil
+}
+
+func (r *Runner) LoadMigrations(ctx context.Context, versions map[string]int) error {
+	files := r.fileLoaderFunc(r.trackerOptions.MigrationsDirectory, MigrationFileRegexPattern)
+
+	items, err := r.migrationLoaderFunc(files, r.trackerOptions.MigrationsDirectory, MigrationFileRegexPattern)
+	if err != nil {
+		log.WithField("func", helpers.GetCurrentFuncName()).Error(err.Error())
+		return err
+	}
+
+	for _, item := range items {
+		if _, ok := versions[item.Version]; ok {
+			r.migrations = append(r.migrations, item)
+		}
+	}
 
 	return nil
 }

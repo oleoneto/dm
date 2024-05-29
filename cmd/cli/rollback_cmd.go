@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/oleoneto/dm/cmd/cli/core"
+	"github.com/oleoneto/dm/pkg/helpers"
 	"github.com/oleoneto/dm/pkg/migrator"
 	"github.com/spf13/cobra"
 )
@@ -34,31 +35,35 @@ var RollbackCmd = &cobra.Command{
 
 		ctx := context.TODO()
 
-		state.Runner.LoadMigrations(ctx)
-		loaded := state.Runner.Migrations(ctx)
-
 		applied, err := state.Runner.AppliedMigrations(ctx)
 		if err != nil {
 			log.Fatalln(err)
 			return
 		}
 
-		if applied == nil || applied.IsEmpty() {
+		if len(applied) == 0 {
 			fmt.Println("No applied migrations to rollback.")
 			return
 		}
 
 		if filter.Value != "" {
-			sequence := applied.FindSequence(func(item migrator.Migration) bool { return item.Version == filter.Value || item.Name == filter.Value })
+			sequence := helpers.FindLeftSequence(applied, func(item migrator.Migration) bool { return item.Version == filter.Value || item.Name == filter.Value })
 			if sequence == nil {
 				fmt.Printf("Migration with %s %s not found.\n", filter.Type, filter.Value)
 				return
 			}
 
-			loaded = sequence
+			applied = sequence
 		}
 
-		err = state.Runner.RevertSome(ctx, *loaded)
+		var keys = make(map[string]int)
+		for _, m := range applied {
+			keys[m.Version] = 0
+		}
+
+		state.Runner.LoadMigrations(ctx, keys)
+
+		err = state.Runner.RevertSome(ctx, state.Runner.Migrations(ctx))
 		if err != nil {
 			log.Fatalln(err)
 		}

@@ -26,11 +26,11 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.TODO()
 
-			state.Runner.LoadMigrations(ctx)
+			state.Runner.LoadAllMigrations(ctx)
 
 			migrations := state.Runner.Migrations(ctx)
 			if migrations != nil {
-				state.Writer.Print(Migrations(*migrations.RawData()))
+				state.Writer.Print(Migrations(migrations))
 			}
 		},
 	}
@@ -48,7 +48,7 @@ var (
 			}
 
 			if migrations != nil {
-				state.Writer.Print(Migrations(*migrations.RawData()))
+				state.Writer.Print(Migrations(migrations))
 			}
 		},
 	}
@@ -67,7 +67,7 @@ var (
 			}
 
 			if migrations != nil {
-				state.Writer.Print(Migrations(*migrations.RawData()))
+				state.Writer.Print(Migrations(migrations))
 			}
 		},
 	}

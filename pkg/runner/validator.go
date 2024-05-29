@@ -7,29 +7,32 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
-	"github.com/oleoneto/dm/pkg/ds"
+	"github.com/oleoneto/dm/pkg/helpers"
 	"github.com/oleoneto/dm/pkg/migrator"
+	log "github.com/sirupsen/logrus"
 )
 
 // Validate - Checks if all migrations are valid
-func Validate(ctx context.Context, migrations ds.Queue[migrator.Migration]) error {
-	if migrations.IsEmpty() {
+func Validate(ctx context.Context, migrations []migrator.Migration) error {
+	if len(migrations) == 0 {
+		log.WithField("func", helpers.GetCurrentFuncName()).Debugln("No migrations found...")
 		return fmt.Errorf("no migrations found")
 	}
 
-	m := migrations.Dequeue()
 	visitedNames := make(map[string]bool)
 	visitedVersions := make(map[string]bool)
 
-	for m != nil {
-		// if m.Engine != r.engine.Name() { return fmt.Errorf("migration engine mismatch %v", m) }
+	for i := 0; i < len(migrations); i++ {
+		// if item.Engine != r.engine.Name() { return fmt.Errorf("migration engine mismatch %v", item) }
 
-		if _, ok := visitedVersions[m.Version]; ok {
-			return fmt.Errorf(`duplicate (version): %v`, m)
+		item := migrations[i]
+
+		if _, ok := visitedVersions[item.Version]; ok {
+			return fmt.Errorf(`duplicate (version): %v`, item)
 		}
 
-		if _, ok := visitedNames[m.Name]; ok {
-			return fmt.Errorf(`duplicate (name): %v`, m)
+		if _, ok := visitedNames[item.Name]; ok {
+			return fmt.Errorf(`duplicate (name): %v`, item)
 		}
 
 		var createTablePattern = *regexp.MustCompile(`CREATE TABLE (?P<TableName>\w+)`)
@@ -38,9 +41,9 @@ func Validate(ctx context.Context, migrations ds.Queue[migrator.Migration]) erro
 		var mismatchedInstructions int
 		var mismatchedTables = map[string]string{}
 
-		for _, change := range m.Changes.Up {
+		for _, change := range item.Changes.Up {
 			if len(strings.Split(change, " ")) < 3 {
-				return fmt.Errorf("missing (or invalid) migrate instruction: %v", m)
+				return fmt.Errorf("missing (or invalid) migrate instruction: %v", item)
 			}
 
 			if createTablePattern.MatchString(change) {
@@ -51,9 +54,9 @@ func Validate(ctx context.Context, migrations ds.Queue[migrator.Migration]) erro
 			}
 		}
 
-		for _, change := range m.Changes.Down {
+		for _, change := range item.Changes.Down {
 			if len(strings.Split(change, " ")) < 3 {
-				return fmt.Errorf(`missing (or invalid) rollback instruction: %v`, m)
+				return fmt.Errorf(`missing (or invalid) rollback instruction: %v`, item)
 			}
 
 			if dropTablePattern.MatchString(change) {
@@ -65,24 +68,22 @@ func Validate(ctx context.Context, migrations ds.Queue[migrator.Migration]) erro
 		}
 
 		if mismatchedInstructions != 0 || len(mismatchedTables) != 0 {
-			return fmt.Errorf("CREATE and DROP instructions must always be paired: %v", m)
+			return fmt.Errorf("CREATE and DROP instructions must always be paired: %v", item)
 		}
 
-		version, name, _ := strings.Cut(m.FileName, "_")
+		version, name, _ := strings.Cut(item.FileName, "_")
 		name = strcase.ToCamel(strings.Split(name, ".")[0])
 
-		if m.Version != version {
-			return fmt.Errorf("version mismatch: %v", m)
+		if item.Version != version {
+			return fmt.Errorf("version mismatch: %v", item)
 		}
 
-		if m.Name != name {
-			return fmt.Errorf("name mismatch: %v", m)
+		if item.Name != name {
+			return fmt.Errorf("name mismatch: %v", item)
 		}
 
-		visitedNames[m.Name] = true
-		visitedVersions[m.Version] = true
-
-		m = migrations.Dequeue()
+		visitedNames[item.Name] = true
+		visitedVersions[item.Version] = true
 	}
 
 	return nil

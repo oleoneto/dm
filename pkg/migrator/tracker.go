@@ -2,8 +2,6 @@ package migrator
 
 import (
 	"context"
-
-	"github.com/oleoneto/dm/pkg/ds"
 )
 
 type MigrationsTrackerProtocol interface {
@@ -26,8 +24,8 @@ type MigrationsTrackerProtocol interface {
 	IsEmpty(context.Context) bool
 
 	// AppliedMigrations - Returns all applied migrations
-	AppliedMigrations(context.Context) (*ds.Queue[Migration], error)
+	AppliedMigrations(context.Context) ([]Migration, error)
 
 	// PendingMigrations - Returns all non-applied migrations.
-	PendingMigrations(context.Context) (*ds.Queue[Migration], error)
+	PendingMigrations(context.Context) ([]Migration, error)
 }

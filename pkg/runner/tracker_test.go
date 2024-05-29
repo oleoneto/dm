@@ -11,7 +11,6 @@ import (
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-	"github.com/oleoneto/dm/pkg/ds"
 	"github.com/oleoneto/dm/pkg/migrator"
 	"github.com/oleoneto/dm/pkg/runner"
 	"github.com/stretchr/testify/assert"
@@ -160,9 +159,13 @@ func (suite *TrackerTestSuite) TestAppliedMigrations() {
 	ctx := context.TODO()
 
 	res, err := r.AppliedMigrations(ctx)
-	assert.NoError(suite.T(), err)
+	if err != nil {
+		suite.T().Error(err)
+		return
+	}
+
 	assert.NotNil(suite.T(), res)
-	assert.Equal(suite.T(), 0, res.Size())
+	assert.Equal(suite.T(), 0, len(res))
 }
 
 func (suite *TrackerTestSuite) TestApplyMigrations() {
@@ -194,7 +197,7 @@ func (suite *TrackerTestSuite) TestApplyMigrations() {
 		suite.db,
 		func(string, *regexp.Regexp) []fs.DirEntry { return []fs.DirEntry{&MockDirEntry{}} }, // file loader
 		func([]fs.DirEntry, string, *regexp.Regexp) ([]migrator.Migration, error) { return migrations, nil },
-		func(context.Context, ds.Queue[migrator.Migration]) error { return nil }, // validator
+		func(context.Context, []migrator.Migration) error { return nil }, // validator
 		runner.ApplyMigrations,
 		nil,
 	)
@@ -202,13 +205,23 @@ func (suite *TrackerTestSuite) TestApplyMigrations() {
 	ctx := context.TODO()
 
 	err := r.StartTracking(ctx)
-	assert.NoError(suite.T(), err)
+	if err != nil {
+		suite.T().Error(err)
+		return
+	}
 
-	err = r.Apply(ctx) // TODO: Take loaderFunc as argument
-	assert.NoError(suite.T(), err)
+	err = r.ApplySome(ctx, migrations) // TODO: Take loaderFunc as argument
+	if err != nil {
+		suite.T().Error(err)
+		return
+	}
 
 	res, err := r.AppliedMigrations(ctx)
-	assert.NoError(suite.T(), err)
+	if err != nil {
+		suite.T().Error(err)
+		return
+	}
+
 	assert.NotNil(suite.T(), res)
-	assert.Equal(suite.T(), 2, res.Size())
+	assert.Equal(suite.T(), 2, len(res))
 }

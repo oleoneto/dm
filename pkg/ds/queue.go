@@ -80,8 +80,34 @@ func (Q *Queue[T]) Find(finderFunc func(item T) bool) *T {
 	return nil
 }
 
-// FindSequence - Walks the queue in search of a given item. Returns a new sequence starting at the found item.
-func (Q *Queue[T]) FindSequence(finderFunc func(item T) bool) *Queue[T] {
+// FindLeftSequence - Walks the queue in search of a given item. Returns a new sequence starting at the found item.
+func (Q *Queue[T]) FindLeftSequence(finderFunc func(item T) bool) *Queue[T] {
+	if Q.IsEmpty() {
+		return nil
+	}
+
+	var matchedIndex = -1
+	for index, item := range Q.data {
+		if finderFunc(item) {
+			matchedIndex = index
+			break
+		}
+	}
+
+	if matchedIndex < 0 {
+		return nil
+	}
+
+	var queue Queue[T]
+	for i := 0; i < matchedIndex; i++ {
+		queue.Enqueue(Q.data[i])
+	}
+
+	return &queue
+}
+
+// FindRightSequence - Walks the queue in search of a given item. Returns a new sequence starting at the found item.
+func (Q *Queue[T]) FindRightSequence(finderFunc func(item T) bool) *Queue[T] {
 	if Q.IsEmpty() {
 		return nil
 	}

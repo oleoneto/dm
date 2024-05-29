@@ -3,7 +3,6 @@ package runner
 import (
 	"regexp"
 
-	"github.com/oleoneto/dm/pkg/ds"
 	"github.com/oleoneto/dm/pkg/engines"
 	"github.com/oleoneto/dm/pkg/migrator"
 )
@@ -16,8 +15,7 @@ type Runner struct {
 	engine         engines.SqlEngineProtocol
 	trackerOptions TrackerOptions
 
-	// Data
-	migrations ds.Queue[migrator.Migration]
+	migrations []migrator.Migration
 
 	fileLoaderFunc      FileLoaderFunc
 	migrationLoaderFunc LoadMigrationsFunc
